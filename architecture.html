@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - ASRO</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">ASRO</a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="requirements.html">Requirements</a></li>
+                <li><a href="architecture.html" class="active">Architecture</a></li>
+                <li><a href="rationale.html">Design Rationale</a></li>
+                <li><a href="traceability.html">Traceability</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>High-Level Architecture</h1>
+            <p>System design and component interactions for ASRO</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="architecture-intro">
+            <h2>Architectural Overview</h2>
+            <p>ASRO follows a multi-agent architecture where specialized agents collaborate to monitor, analyze, plan, and execute resource optimizations. The system is designed around three core principles: safety through controlled execution, transparency through comprehensive auditing, and scalability through event-driven communication.</p>
+        </section>
+
+        <section class="architecture-section">
+            <h2>System Context Diagram</h2>
+            <p>This diagram shows ASRO's position within the HPC environment and its interactions with external systems.</p>
+            <div class="diagram-container">
+                <div class="mermaid">
+graph TB
+    Users[Research Users]
+    Admins[System Administrators]
+    Slurm[Slurm Workload Manager]
+    Prometheus[Prometheus Metrics]
+    ELK[ELK Stack]
+    Nodes[Compute Nodes]
+
+    Users -->|Submit Jobs| Slurm
+    Admins -->|Approve Actions| ASRO
+    ASRO[ASRO System]
+
+    ASRO -->|Query Metrics| Prometheus
+    ASRO -->|Query Logs| ELK
+    ASRO -->|Read Job Data| Slurm
+    ASRO -->|Control Jobs| Slurm
+    ASRO -->|Run Checks| Nodes
+
+    Prometheus -->|Collect| Nodes
+    ELK -->|Aggregate| Nodes
+    Slurm -->|Schedule| Nodes
+
+    ASRO -->|Notify| Users
+    ASRO -->|Report| Admins
+
+    style ASRO fill:#4a90e2,stroke:#2e5c8a,stroke-width:3px,color:#fff
+    style Slurm fill:#e8f4f8,stroke:#4a90e2
+    style Prometheus fill:#e8f4f8,stroke:#4a90e2
+    style ELK fill:#e8f4f8,stroke:#4a90e2
+    style Nodes fill:#e8f4f8,stroke:#4a90e2
+                </div>
+            </div>
+        </section>
+
+        <section class="architecture-section">
+            <h2>Component Architecture</h2>
+            <p>The system consists of five primary agents and supporting infrastructure components. Each agent has specific responsibilities and communicates through well-defined interfaces.</p>
+            <div class="diagram-container">
+                <div class="mermaid">
+graph TB
+    subgraph "ASRO System"
+        Monitor[C-1: Monitor Agent]
+        Profiler[C-2: Profiler Agent]
+        Planner[C-3: Planner Agent]
+        Executor[C-4: Executor Agent]
+        Audit[C-5: Audit Agent]
+
+        subgraph "Communication Layer"
+            Kafka[C-6: Event Backbone<br/>Apache Kafka]
+            gRPC[C-7: RPC Service<br/>gRPC with mTLS]
+        end
+
+        subgraph "Data Layer"
+            TimeDB[C-8: Time-Series DB<br/>Prometheus/VictoriaMetrics]
+            AuditDB[C-9: Audit Store<br/>PostgreSQL]
+            ProfileDB[C-10: Profile Store<br/>Redis + PostgreSQL]
+        end
+
+        subgraph "Integration Layer"
+            MCP[C-11: Tool Gateway<br/>Model Context Protocol]
+            Dashboard[C-12: Web Interface<br/>React Dashboard]
+            Simulator[C-13: Job Simulator]
+        end
+    end
+
+    Monitor -->|Events| Kafka
+    Profiler -->|Events| Kafka
+    Planner -->|Events| Kafka
+    Executor -->|Events| Kafka
+    Audit -->|Events| Kafka
+
+    Kafka -->|Subscribe| Monitor
+    Kafka -->|Subscribe| Profiler
+    Kafka -->|Subscribe| Planner
+    Kafka -->|Subscribe| Executor
+    Kafka -->|Subscribe| Audit
+
+    Monitor <-->|RPC| gRPC
+    Profiler <-->|RPC| gRPC
+    Planner <-->|RPC| gRPC
+    Executor <-->|RPC| gRPC
+    Audit <-->|RPC| gRPC
+
+    Monitor -->|Write| TimeDB
+    Profiler -->|Read| TimeDB
+    Profiler -->|Write| ProfileDB
+    Planner -->|Read| ProfileDB
+    Executor -->|Write| AuditDB
+    Audit -->|Write/Read| AuditDB
+
+    Planner -->|Safe Calls| MCP
+    Executor -->|Safe Calls| MCP
+    Planner -->|Simulate| Simulator
+
+    Dashboard -->|Query| gRPC
+    Dashboard -->|Display| Audit
+
+    style Monitor fill:#66c2a5
+    style Profiler fill:#fc8d62
+    style Planner fill:#8da0cb
+    style Executor fill:#e78ac3
+    style Audit fill:#a6d854
+    style Kafka fill:#ffd92f
+    style gRPC fill:#ffd92f
+    style MCP fill:#b3b3b3
+    style Dashboard fill:#b3b3b3
+                </div>
+            </div>
+        </section>
+
+        <section class="component-details">
+            <h2>Component Descriptions</h2>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-1</span>
+                    <h3>Monitor Agent</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Continuously collect and process resource utilization metrics from the HPC cluster.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Query Prometheus for GPU, CPU, memory, and network metrics</li>
+                        <li>Execute system-level checks using nvidia-smi and htop on compute nodes</li>
+                        <li>Validate GPU-to-job bindings against Slurm allocations</li>
+                        <li>Detect anomalies in real-time resource usage</li>
+                        <li>Publish monitoring events to the event backbone</li>
+                    </ul>
+                    <p><strong>Interfaces:</strong> Prometheus API, Slurm REST API, SSH/System Commands, Event Bus</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-2</span>
+                    <h3>Profiler Agent</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Build and maintain historical resource usage profiles for jobs, users, and workload types.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Aggregate historical data from Slurm accounting and telemetry systems</li>
+                        <li>Compute statistical profiles including mean, percentiles, and variance for resource usage</li>
+                        <li>Identify usage patterns and trends over time</li>
+                        <li>Predict expected resource needs for known job types</li>
+                        <li>Update profiles incrementally as new data arrives</li>
+                    </ul>
+                    <p><strong>Interfaces:</strong> Slurm sacct, Time-Series DB, Profile Store, Event Bus</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-3</span>
+                    <h3>Planner Agent</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Generate ranked optimization recommendations based on current metrics and historical profiles.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Receive anomaly events from Monitor and query relevant profiles</li>
+                        <li>Use LLM-based reasoning to generate candidate optimization actions</li>
+                        <li>Simulate proposed changes using the Job Simulator</li>
+                        <li>Compute risk scores and expected benefits for each recommendation</li>
+                        <li>Rank recommendations by impact and send to Audit for approval</li>
+                        <li>Access external tools safely through MCP</li>
+                    </ul>
+                    <p><strong>Interfaces:</strong> Profile Store, Job Simulator, MCP Tool Gateway, Event Bus, gRPC</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-4</span>
+                    <h3>Executor Agent</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Safely apply approved optimization actions to the Slurm cluster with rollback capabilities.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Execute approved actions through Slurm control interfaces</li>
+                        <li>Support dry-run mode for testing without actual changes</li>
+                        <li>Implement canary deployments for high-risk changes</li>
+                        <li>Monitor post-execution metrics to detect regressions</li>
+                        <li>Automatically rollback changes if outcomes are negative</li>
+                        <li>Coordinate with checkpointing systems for job restarts</li>
+                        <li>Log all execution steps to the audit database</li>
+                    </ul>
+                    <p><strong>Interfaces:</strong> Slurm slurmrestd, Slurm scontrol, MCP Tool Gateway, Audit Store, Event Bus</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-5</span>
+                    <h3>Audit and Human-in-Loop Agent</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Manage approval workflows, maintain audit trails, and provide transparency to administrators.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Receive recommendations from Planner and determine approval requirements</li>
+                        <li>Present proposals through the web interface with clear explanations</li>
+                        <li>Enforce policy constraints and risk thresholds</li>
+                        <li>Collect and validate human approvals or rejections</li>
+                        <li>Maintain immutable audit logs of all decisions and actions</li>
+                        <li>Generate reports and summaries for administrators</li>
+                    </ul>
+                    <p><strong>Interfaces:</strong> Web Dashboard, Audit Store, Event Bus, gRPC</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-6</span>
+                    <h3>Event Backbone (Apache Kafka)</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Provide durable, ordered event streaming for agent-to-agent communication.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Accept published events from all agents</li>
+                        <li>Maintain event ordering within topics</li>
+                        <li>Store events durably for replay and recovery</li>
+                        <li>Enable multiple subscribers for each event type</li>
+                    </ul>
+                    <p><strong>Topics:</strong> monitoring.events, profiling.updates, planning.recommendations, execution.results, audit.logs</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-7</span>
+                    <h3>RPC Service (gRPC with mTLS)</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Enable synchronous request-response communication between agents and external clients.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Handle direct queries between agents requiring immediate responses</li>
+                        <li>Authenticate all connections using mutual TLS certificates</li>
+                        <li>Provide low-latency communication for time-sensitive operations</li>
+                        <li>Support the web dashboard's queries for real-time data</li>
+                    </ul>
+                    <p><strong>APIs:</strong> GetMetrics, QueryProfile, RequestApproval, ExecuteAction, GetAuditLog</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-8</span>
+                    <h3>Time-Series Database</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Store and query time-stamped resource utilization metrics efficiently.</p>
+                    <p><strong>Technology:</strong> Prometheus or VictoriaMetrics</p>
+                    <p><strong>Data Stored:</strong> GPU utilization, CPU usage, memory consumption, network I/O, job states</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-9</span>
+                    <h3>Audit Store</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Persist immutable audit logs of all system decisions and actions.</p>
+                    <p><strong>Technology:</strong> PostgreSQL with append-only tables and cryptographic checksums</p>
+                    <p><strong>Data Stored:</strong> Detected issues, generated recommendations, approval decisions, execution steps, outcomes, rollbacks</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-10</span>
+                    <h3>Profile Store</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Store and quickly retrieve resource usage profiles for jobs and users.</p>
+                    <p><strong>Technology:</strong> Redis for hot profiles, PostgreSQL for long-term storage</p>
+                    <p><strong>Data Stored:</strong> Per-job statistics, per-user patterns, workload type profiles, prediction models</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-11</span>
+                    <h3>Tool Gateway (Model Context Protocol)</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Provide safe, auditable access to external tools and system commands for LLM-based agents.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Expose whitelisted tools and commands to Planner and Executor</li>
+                        <li>Validate all tool invocations against security policies</li>
+                        <li>Log all tool calls with parameters and results</li>
+                        <li>Prevent unauthorized or dangerous operations</li>
+                    </ul>
+                    <p><strong>Exposed Tools:</strong> Slurm commands, nvidia-smi, job simulator, cluster topology queries</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-12</span>
+                    <h3>Web Interface</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Provide administrators with visibility into ASRO operations and enable approval workflows.</p>
+                    <p><strong>Technology:</strong> React-based single-page application</p>
+                    <p><strong>Features:</strong> Real-time dashboard, pending approvals, historical reports, policy configuration, user notifications</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-header">
+                    <span class="component-id">C-13</span>
+                    <h3>Job Simulator</h3>
+                </div>
+                <div class="component-body">
+                    <p><strong>Purpose:</strong> Simulate the impact of proposed changes before execution.</p>
+                    <p><strong>Key Responsibilities:</strong></p>
+                    <ul>
+                        <li>Model cluster state including queued and running jobs</li>
+                        <li>Apply proposed changes to the simulation</li>
+                        <li>Predict metrics like queue time, utilization, and throughput</li>
+                        <li>Provide confidence scores for predictions</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="architecture-section">
+            <h2>Interaction Sequence: Optimization Flow</h2>
+            <p>This sequence diagram illustrates how the agents collaborate to detect an issue, generate a recommendation, obtain approval, and execute the fix.</p>
+            <div class="diagram-container">
+                <div class="mermaid">
+sequenceDiagram
+    participant M as Monitor Agent
+    participant K as Kafka
+    participant Prof as Profiler Agent
+    participant Plan as Planner Agent
+    participant Sim as Simulator
+    participant A as Audit Agent
+    participant Admin as Administrator
+    participant E as Executor Agent
+    participant S as Slurm
+
+    M->>M: Detect GPU underutilization
+    M->>K: Publish anomaly event
+    K->>Prof: Notify of anomaly
+    Prof->>Prof: Query historical profile
+    Prof->>K: Publish profile data
+
+    K->>Plan: Forward anomaly + profile
+    Plan->>Plan: Generate recommendations
+    Plan->>Sim: Simulate proposed change
+    Sim-->>Plan: Predicted impact
+    Plan->>Plan: Compute risk score
+    Plan->>K: Publish recommendation
+
+    K->>A: Forward recommendation
+    A->>A: Check risk threshold
+    A->>Admin: Request approval (high risk)
+    Admin->>A: Approve action
+    A->>K: Publish approval
+
+    K->>E: Forward approved action
+    E->>E: Execute dry-run
+    E->>S: Apply resource change
+    S-->>E: Confirmation
+    E->>M: Monitor post-change metrics
+    M-->>E: Metrics improved
+    E->>K: Publish success event
+    K->>A: Forward for audit log
+    A->>A: Record complete action
+                </div>
+            </div>
+        </section>
+
+        <section class="architecture-section">
+            <h2>Deployment Architecture</h2>
+            <p>ASRO components are containerized and deployed across multiple nodes for resilience and scalability.</p>
+            <div class="diagram-container">
+                <div class="mermaid">
+graph TB
+    subgraph "Control Plane Node"
+        Dashboard[Web Dashboard]
+        Audit[Audit Agent]
+        Plan[Planner Agent]
+    end
+
+    subgraph "Agent Nodes (N replicas)"
+        Mon1[Monitor Agent 1]
+        Mon2[Monitor Agent 2]
+        Exec1[Executor Agent 1]
+        Prof[Profiler Agent]
+    end
+
+    subgraph "Infrastructure Services"
+        Kafka[Kafka Cluster<br/>3 brokers]
+        Redis[Redis Cluster]
+        Postgres[PostgreSQL<br/>with replication]
+        Prometheus[Prometheus]
+    end
+
+    subgraph "HPC Cluster"
+        SlurmCtrl[Slurm Controller]
+        Compute[Compute Nodes]
+    end
+
+    Dashboard --> Audit
+    Dashboard --> Plan
+    Audit --> Kafka
+    Plan --> Kafka
+    Mon1 --> Kafka
+    Mon2 --> Kafka
+    Exec1 --> Kafka
+    Prof --> Kafka
+
+    Kafka --> Redis
+    Kafka --> Postgres
+    Audit --> Postgres
+    Prof --> Redis
+    Mon1 --> Prometheus
+
+    Exec1 --> SlurmCtrl
+    Mon1 --> SlurmCtrl
+    Mon1 --> Compute
+    Plan --> SlurmCtrl
+
+    style Dashboard fill:#b3b3b3
+    style Kafka fill:#ffd92f
+    style Redis fill:#e8f4f8
+    style Postgres fill:#e8f4f8
+    style SlurmCtrl fill:#e8f4f8
+                </div>
+            </div>
+        </section>
+
+        <section class="technology-stack">
+            <h2>Technology Stack</h2>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <h4>Agent Implementation</h4>
+                    <p>Python 3.11+ with LangChain for LLM integration</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Communication</h4>
+                    <p>Apache Kafka for events, gRPC with Protocol Buffers for RPC</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Data Storage</h4>
+                    <p>PostgreSQL for structured data, Redis for caching, Prometheus for metrics</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Web Interface</h4>
+                    <p>React 18 with Material-UI, WebSocket for real-time updates</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Tool Integration</h4>
+                    <p>Model Context Protocol (MCP) for safe tool access</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Security</h4>
+                    <p>TLS 1.3, mutual TLS authentication, RBAC with JWT tokens</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Deployment</h4>
+                    <p>Docker containers orchestrated by Kubernetes</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Monitoring</h4>
+                    <p>Grafana dashboards, Prometheus alerts, structured logging with ELK</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ASRO Design Team | CS 5744: Software Design and Quality</p>
+        </div>
+    </footer>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#4a90e2',
+                primaryTextColor: '#333',
+                primaryBorderColor: '#2e5c8a',
+                lineColor: '#666',
+                secondaryColor: '#e8f4f8',
+                tertiaryColor: '#f5f5f5'
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traceability Matrix - ASRO</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">ASRO</a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="requirements.html">Requirements</a></li>
+                <li><a href="architecture.html">Architecture</a></li>
+                <li><a href="rationale.html">Design Rationale</a></li>
+                <li><a href="traceability.html" class="active">Traceability</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>Traceability Matrix</h1>
+            <p>Mapping between requirements and design components</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="traceability-intro">
+            <h2>Overview</h2>
+            <p>This traceability matrix demonstrates how each requirement is addressed by specific components in the ASRO architecture. It ensures that all requirements have corresponding design elements and that no components exist without purpose.</p>
+            <p>The matrix is organized by requirement categories. Each row shows a requirement and the components responsible for satisfying it, along with a brief explanation of how the requirement is fulfilled.</p>
+        </section>
+
+        <section class="matrix-section">
+            <h2>Functional Requirements Traceability</h2>
+
+            <div class="matrix-category">
+                <h3>Resource Monitoring and Detection</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">FR-1</td>
+                            <td>Real-time Resource Monitoring</td>
+                            <td class="component-cell">C-1, C-6, C-8</td>
+                            <td>Monitor Agent continuously queries Prometheus and system tools, publishes to Kafka event backbone, stores in Time-Series DB</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-2</td>
+                            <td>GPU Mapping Validation</td>
+                            <td class="component-cell">C-1, C-11</td>
+                            <td>Monitor Agent executes nvidia-smi through MCP Tool Gateway and compares with Slurm allocations</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-3</td>
+                            <td>Anomaly Detection</td>
+                            <td class="component-cell">C-1, C-8</td>
+                            <td>Monitor Agent compares current metrics from Time-Series DB against expected patterns and identifies sustained deviations</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-4</td>
+                            <td>Historical Profiling</td>
+                            <td class="component-cell">C-2, C-8, C-10</td>
+                            <td>Profiler Agent analyzes Time-Series DB data over 90-day windows and stores profiles in Profile Store</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Analysis and Planning</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">FR-5</td>
+                            <td>Resource Optimization Recommendations</td>
+                            <td class="component-cell">C-3, C-10, C-11</td>
+                            <td>Planner Agent uses LLM reasoning with profile data and safely accesses tools via MCP to generate ranked recommendations</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-6</td>
+                            <td>Action Simulation</td>
+                            <td class="component-cell">C-3, C-13</td>
+                            <td>Planner Agent invokes Job Simulator with proposed changes and recent metrics to predict impact</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-7</td>
+                            <td>Risk Assessment</td>
+                            <td class="component-cell">C-3, C-5</td>
+                            <td>Planner Agent computes risk scores based on multiple factors; Audit Agent enforces risk-based policies</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-8</td>
+                            <td>Batch Optimization</td>
+                            <td class="component-cell">C-3, C-2</td>
+                            <td>Planner Agent uses Profiler's pattern recognition to identify similar jobs and propose group optimizations</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Safe Execution and Control</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">FR-9</td>
+                            <td>Dry-run Mode</td>
+                            <td class="component-cell">C-4, C-9</td>
+                            <td>Executor Agent supports dry-run flag that logs planned actions to Audit Store without executing them</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-10</td>
+                            <td>Human Approval Workflow</td>
+                            <td class="component-cell">C-5, C-12</td>
+                            <td>Audit Agent checks risk thresholds and presents high-risk actions via Web Interface for approval</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-11</td>
+                            <td>Canary Deployment</td>
+                            <td class="component-cell">C-4, C-1</td>
+                            <td>Executor Agent applies changes to subset first, Monitor Agent tracks canary metrics</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-12</td>
+                            <td>Automatic Rollback</td>
+                            <td class="component-cell">C-4, C-1</td>
+                            <td>Executor Agent monitors post-change metrics from Monitor and reverts via Slurm if degradation detected</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-13</td>
+                            <td>Job Control Operations</td>
+                            <td class="component-cell">C-4, C-11</td>
+                            <td>Executor Agent uses MCP to safely call Slurm scontrol and slurmrestd APIs</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-14</td>
+                            <td>Checkpoint-aware Restart</td>
+                            <td class="component-cell">C-4</td>
+                            <td>Executor Agent queries checkpoint status and coordinates restart from saved state when available</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Communication and Transparency</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">FR-15</td>
+                            <td>User Notification</td>
+                            <td class="component-cell">C-5, C-12</td>
+                            <td>Audit Agent sends notifications through Web Interface and email when jobs are targeted for optimization</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-16</td>
+                            <td>Web Dashboard</td>
+                            <td class="component-cell">C-12, C-7</td>
+                            <td>Web Interface provides real-time views by querying agents via gRPC Service</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-17</td>
+                            <td>Audit Trail</td>
+                            <td class="component-cell">C-5, C-9, C-6</td>
+                            <td>All agents publish events to Kafka; Audit Agent persists comprehensive logs to Audit Store</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Integration and Extensibility</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">FR-18</td>
+                            <td>Multi-cluster Support</td>
+                            <td class="component-cell">C-1, C-4</td>
+                            <td>Monitor and Executor agents support configuration for multiple Slurm endpoints</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-19</td>
+                            <td>Policy Customization</td>
+                            <td class="component-cell">C-5, C-12</td>
+                            <td>Audit Agent reads policy configuration files; administrators modify via Web Interface</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">FR-20</td>
+                            <td>Tool Integration via MCP</td>
+                            <td class="component-cell">C-11, C-3, C-4</td>
+                            <td>MCP Tool Gateway provides controlled access for Planner and Executor agents</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="matrix-section">
+            <h2>Non-Functional Requirements Traceability</h2>
+
+            <div class="matrix-category">
+                <h3>Performance</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">NFR-1</td>
+                            <td>Monitoring Latency (60s max)</td>
+                            <td class="component-cell">C-1, C-6, C-8</td>
+                            <td>Monitor Agent uses streaming queries to Prometheus and publishes to Kafka with minimal buffering</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-2</td>
+                            <td>Scalability (10K nodes, 100K jobs)</td>
+                            <td class="component-cell">C-1, C-6, All</td>
+                            <td>Horizontal scaling of Monitor agents, Kafka partitioning, and database sharding support large clusters</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-3</td>
+                            <td>Action Generation Time (5 min)</td>
+                            <td class="component-cell">C-3, C-10</td>
+                            <td>Planner Agent uses cached profiles and efficient LLM prompts; timeout enforced</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Reliability</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">NFR-4</td>
+                            <td>System Availability (99.9%)</td>
+                            <td class="component-cell">All, K8s</td>
+                            <td>Kubernetes provides health checks and automatic restarts; database replication ensures data availability</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-5</td>
+                            <td>Fault Tolerance</td>
+                            <td class="component-cell">C-1, C-5, C-6</td>
+                            <td>Monitor and Audit continue operating if other agents fail; Kafka durably stores events for replay</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-6</td>
+                            <td>Data Persistence</td>
+                            <td class="component-cell">C-8, C-9, C-10</td>
+                            <td>All databases use persistent volumes with replication and backup</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Security</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">NFR-7</td>
+                            <td>Authentication and Authorization</td>
+                            <td class="component-cell">C-7, C-12</td>
+                            <td>gRPC Service enforces mutual TLS; Web Interface implements RBAC with JWT tokens</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-8</td>
+                            <td>Audit Immutability</td>
+                            <td class="component-cell">C-9, C-5</td>
+                            <td>Audit Store uses append-only tables; Audit Agent computes checksums on write</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-9</td>
+                            <td>Secure Communication</td>
+                            <td class="component-cell">C-6, C-7</td>
+                            <td>Kafka configured with TLS; gRPC Service requires TLS 1.3 with strong ciphers</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Usability</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">NFR-10</td>
+                            <td>Explanation Quality</td>
+                            <td class="component-cell">C-3, C-5, C-12</td>
+                            <td>Planner generates natural language explanations; Audit Agent formats for display; Web Interface presents clearly</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-11</td>
+                            <td>Dashboard Responsiveness (2s)</td>
+                            <td class="component-cell">C-12, C-7</td>
+                            <td>Web Interface uses React for fast rendering; gRPC provides low-latency queries; WebSocket for push updates</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-12</td>
+                            <td>Configuration Simplicity (8h setup)</td>
+                            <td class="component-cell">All, K8s</td>
+                            <td>Containerized deployment with Helm charts; automated configuration scripts; comprehensive documentation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="matrix-category">
+                <h3>Maintainability</h3>
+                <table class="traceability-table">
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Requirement</th>
+                            <th>Components</th>
+                            <th>How Satisfied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="req-cell">NFR-13</td>
+                            <td>Modular Architecture</td>
+                            <td class="component-cell">All Agents</td>
+                            <td>Five independent agents with clear interfaces; communication via well-defined protocols</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-14</td>
+                            <td>Logging and Diagnostics</td>
+                            <td class="component-cell">All, C-11</td>
+                            <td>All components use structured logging; health endpoints exposed; MCP logs all tool calls</td>
+                        </tr>
+                        <tr>
+                            <td class="req-cell">NFR-15</td>
+                            <td>API Stability</td>
+                            <td class="component-cell">C-6, C-7</td>
+                            <td>Kafka topics use versioned schemas; gRPC Service maintains backward compatibility through Protocol Buffers</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="component-coverage">
+            <h2>Component Coverage Summary</h2>
+            <p>This reverse mapping shows which requirements each component addresses, ensuring no orphaned components exist.</p>
+
+            <div class="coverage-grid">
+                <div class="coverage-item">
+                    <h4>C-1: Monitor Agent</h4>
+                    <p><strong>Requirements:</strong> FR-1, FR-2, FR-3, FR-11, FR-12, FR-18, NFR-1, NFR-2, NFR-5</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-2: Profiler Agent</h4>
+                    <p><strong>Requirements:</strong> FR-4, FR-8</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-3: Planner Agent</h4>
+                    <p><strong>Requirements:</strong> FR-5, FR-6, FR-7, FR-8, FR-20, NFR-3, NFR-10</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-4: Executor Agent</h4>
+                    <p><strong>Requirements:</strong> FR-9, FR-11, FR-12, FR-13, FR-14, FR-18, FR-20</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-5: Audit Agent</h4>
+                    <p><strong>Requirements:</strong> FR-7, FR-10, FR-15, FR-17, FR-19, NFR-5, NFR-8, NFR-10</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-6: Event Backbone (Kafka)</h4>
+                    <p><strong>Requirements:</strong> FR-1, FR-17, NFR-1, NFR-2, NFR-5, NFR-9, NFR-15</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-7: RPC Service (gRPC)</h4>
+                    <p><strong>Requirements:</strong> FR-16, NFR-7, NFR-9, NFR-11, NFR-15</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-8: Time-Series Database</h4>
+                    <p><strong>Requirements:</strong> FR-1, FR-3, FR-4, NFR-1, NFR-6</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-9: Audit Store</h4>
+                    <p><strong>Requirements:</strong> FR-9, FR-17, NFR-6, NFR-8</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-10: Profile Store</h4>
+                    <p><strong>Requirements:</strong> FR-4, FR-5, NFR-3, NFR-6</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-11: Tool Gateway (MCP)</h4>
+                    <p><strong>Requirements:</strong> FR-2, FR-5, FR-13, FR-20, NFR-14</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-12: Web Interface</h4>
+                    <p><strong>Requirements:</strong> FR-10, FR-15, FR-16, FR-19, NFR-7, NFR-10, NFR-11, NFR-12</p>
+                </div>
+                <div class="coverage-item">
+                    <h4>C-13: Job Simulator</h4>
+                    <p><strong>Requirements:</strong> FR-6</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="validation">
+            <h2>Validation</h2>
+            <div class="validation-stats">
+                <div class="stat-box">
+                    <div class="stat-number">20</div>
+                    <div class="stat-label">Functional Requirements</div>
+                    <div class="stat-status">All Traced</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">15</div>
+                    <div class="stat-label">Non-Functional Requirements</div>
+                    <div class="stat-status">All Traced</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">13</div>
+                    <div class="stat-label">Design Components</div>
+                    <div class="stat-status">All Justified</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Coverage</div>
+                    <div class="stat-status">Complete</div>
+                </div>
+            </div>
+            <p class="validation-note">All requirements map to at least one component, and all components serve at least one requirement. The design is complete and traceable.</p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ASRO Design Team | CS 5744: Software Design and Quality</p>
+        </div>
+    </footer>
+</body>
+</html>

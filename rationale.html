@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Rationale - ASRO</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">ASRO</a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="requirements.html">Requirements</a></li>
+                <li><a href="architecture.html">Architecture</a></li>
+                <li><a href="rationale.html" class="active">Design Rationale</a></li>
+                <li><a href="traceability.html">Traceability</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>Design Rationale</h1>
+            <p>Justification for key architectural decisions in ASRO</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="rationale-intro">
+            <h2>Introduction</h2>
+            <p>This document explains the reasoning behind major design decisions in ASRO. Each decision addresses specific requirements and constraints while balancing competing concerns such as safety, performance, maintainability, and usability. We present our decisions in priority order based on their impact on system quality.</p>
+        </section>
+
+        <section class="decision-section">
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-1</span>
+                    <h3>Multi-Agent Architecture with Specialized Roles</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-1, FR-4, FR-5, FR-13, NFR-4, NFR-5, NFR-13</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>We chose to implement ASRO as five specialized agents (Monitor, Profiler, Planner, Executor, Audit) rather than a monolithic service or a simpler two-component design.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Separation of Concerns:</strong> Each agent has a clear, focused responsibility. This makes the system easier to understand, test, and modify. For example, changes to monitoring logic do not affect execution logic.</p>
+                        <p><strong>Fault Isolation:</strong> If the Planner agent fails, the Monitor can continue collecting data and the system can recover gracefully. This addresses NFR-5 by preventing cascading failures.</p>
+                        <p><strong>Independent Scaling:</strong> Monitoring is a continuous, high-throughput activity, while planning is computationally intensive but episodic. Separate agents allow us to scale each component independently based on its workload.</p>
+                        <p><strong>Maintainability:</strong> Teams can work on different agents concurrently without conflicts. We can also replace or upgrade individual agents without redeploying the entire system, satisfying NFR-13.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Monolithic Service:</strong> A single application handling all responsibilities would be simpler to deploy but would create tight coupling, make testing difficult, and prevent independent scaling. Failure of any component would bring down the entire system.</p>
+                        <p><strong>Microservices without Agent Framework:</strong> Standard microservices could provide similar modularity, but the agent paradigm better captures the autonomous, decision-making nature of components like Planner and gives us access to LLM-based reasoning capabilities.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Increased Complexity:</strong> Multiple agents require coordination logic, inter-agent communication, and distributed debugging. However, we accept this complexity to gain reliability and maintainability.</p>
+                        <p><strong>Latency:</strong> Communication between agents adds overhead compared to in-process calls. We mitigate this by using fast event streaming and low-latency gRPC where synchronous responses are needed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-2</span>
+                    <h3>Dual Communication Channels: Event Backbone and RPC</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>NFR-1, NFR-2, NFR-5, NFR-6, NFR-9</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>We use Apache Kafka for asynchronous event-driven communication and gRPC with mutual TLS for synchronous request-response interactions.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Event-Driven for Durability:</strong> Kafka provides durable, ordered event streams. If an agent is temporarily down, it can replay events when it recovers. This supports NFR-6 by ensuring no data is lost and NFR-5 by enabling fault tolerance.</p>
+                        <p><strong>Decoupling:</strong> Agents publish events without knowing which other agents will consume them. This loose coupling allows us to add new agents or change event handling logic without modifying producers.</p>
+                        <p><strong>RPC for Interactive Operations:</strong> Some operations require immediate responses. For example, the web dashboard needs real-time data, and the Planner may need to query the Profiler synchronously. gRPC provides low-latency communication suitable for these cases, addressing NFR-11.</p>
+                        <p><strong>Security:</strong> gRPC with mutual TLS ensures all synchronous communications are authenticated and encrypted, satisfying NFR-7 and NFR-9.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Kafka Only:</strong> Using only Kafka would require request-response patterns through temporary reply topics, adding complexity and latency to interactive queries.</p>
+                        <p><strong>REST APIs Only:</strong> REST could handle synchronous calls but lacks strong typing, efficient serialization, and native streaming support. REST also typically does not enforce mutual TLS as strictly as gRPC frameworks.</p>
+                        <p><strong>Message Queue (RabbitMQ):</strong> RabbitMQ could replace Kafka but offers weaker durability guarantees and lower throughput for our high-volume monitoring events.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Operational Complexity:</strong> Running both Kafka and gRPC infrastructure increases deployment and monitoring overhead. We accept this because the combination provides the best fit for our mixed workload.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-3</span>
+                    <h3>Model Context Protocol for Tool Integration</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-20, NFR-7, NFR-8, NFR-14</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>We integrate external tools and system commands through the Model Context Protocol rather than allowing agents direct system access.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Safety and Control:</strong> MCP acts as a controlled gateway. The Planner and Executor agents, which may use LLM-based decision-making, cannot execute arbitrary commands. Only whitelisted tools are exposed, preventing accidental or malicious actions.</p>
+                        <p><strong>Auditability:</strong> Every tool invocation passes through MCP, where it is logged with parameters and results. This complete audit trail addresses NFR-8 and supports post-mortem analysis.</p>
+                        <p><strong>Testability:</strong> We can mock the MCP interface during testing to simulate tool responses without requiring actual cluster access. This improves maintainability as per NFR-14.</p>
+                        <p><strong>Centralized Policy Enforcement:</strong> Access control policies and rate limits can be enforced in one place rather than being scattered across agents.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Direct System Access:</strong> Allowing agents to run commands directly would be simpler but extremely risky. An error in planning logic could execute destructive operations. This was unacceptable given FR-20's emphasis on safe integration.</p>
+                        <p><strong>Custom Tool Wrapper:</strong> We could build our own tool abstraction layer, but MCP is an emerging standard designed specifically for LLM-tool interactions and provides battle-tested safety mechanisms.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Additional Layer:</strong> MCP adds an extra hop between agents and tools, increasing latency slightly. However, the safety and auditability benefits far outweigh this minor performance cost.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-4</span>
+                    <h3>Multi-Stage Safety Mechanism: Simulation, Approval, Canary, Rollback</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-6, FR-7, FR-9, FR-10, FR-11, FR-12, FR-17, NFR-10</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>We implement a four-stage safety process: simulate the change, require human approval for high-risk actions, apply changes to a canary subset first, and automatically rollback if metrics worsen.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Defense in Depth:</strong> Multiple independent safeguards reduce the risk of harmful actions reaching production. Even if one stage fails to catch a problem, subsequent stages can prevent or mitigate damage.</p>
+                        <p><strong>Confidence Building:</strong> Simulation (FR-6) lets us predict outcomes before execution. Canary deployments (FR-11) validate predictions in the real environment with limited blast radius. This staged approach addresses the inherent uncertainty in LLM-based planning.</p>
+                        <p><strong>Human Oversight Where Needed:</strong> Not all changes require approval, which would create bottlenecks. We use risk scoring (FR-7) to determine when human judgment is necessary, satisfying FR-10 while maintaining automation for low-risk changes.</p>
+                        <p><strong>Fast Recovery:</strong> Automatic rollback (FR-12) minimizes the impact of incorrect decisions. Users experience brief degradation rather than sustained outages.</p>
+                        <p><strong>Transparency:</strong> Each stage is logged in detail (FR-17), providing administrators with complete visibility into what happened and why, which supports NFR-10's usability goal.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Always Require Approval:</strong> Requiring human approval for every action would eliminate automation benefits and violate the project goal of "minimal human work."</p>
+                        <p><strong>No Simulation:</strong> Skipping simulation would speed up execution but increase the risk of unexpected outcomes, especially given the complexity of HPC scheduling.</p>
+                        <p><strong>No Automatic Rollback:</strong> Manual rollback would be slower and could leave the cluster in a degraded state longer, harming user experience and violating NFR-4's availability requirement.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Increased Latency:</strong> The full safety pipeline adds time between problem detection and resolution. However, correctness and safety are more important than speed for infrastructure changes.</p>
+                        <p><strong>Complexity:</strong> Implementing simulation and rollback logic is nontrivial. We accept this complexity as essential for building operator trust.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-5</span>
+                    <h3>Separate Data Stores for Different Data Types</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-1, FR-4, FR-17, NFR-1, NFR-2, NFR-6, NFR-8</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>We use three distinct data stores: a time-series database (Prometheus/VictoriaMetrics) for metrics, a relational database (PostgreSQL) for audit logs, and a hybrid cache (Redis) plus relational store for profiles.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Optimized for Access Patterns:</strong> Time-series data requires efficient range queries and compression, which Prometheus provides. Audit logs need strong consistency and append-only semantics, which PostgreSQL handles well. Profiles need fast lookups with occasional batch updates, making Redis plus PostgreSQL ideal.</p>
+                        <p><strong>Performance:</strong> Specialized databases outperform general-purpose solutions for their target workloads. This helps us meet NFR-1's latency requirement and NFR-2's scalability goal.</p>
+                        <p><strong>Data Integrity:</strong> PostgreSQL's ACID properties ensure audit logs (FR-17) are never corrupted or lost, addressing NFR-6 and NFR-8.</p>
+                        <p><strong>Independent Scaling:</strong> We can scale the time-series database independently from the audit database based on their different growth rates and query patterns.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Single Relational Database:</strong> Storing everything in PostgreSQL would simplify deployment but would not perform well for high-cardinality time-series queries at scale.</p>
+                        <p><strong>NoSQL for Everything:</strong> A document database like MongoDB could store all data types but would lack the specialized query capabilities and integrity guarantees we need.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Operational Overhead:</strong> Managing three database technologies requires more expertise and infrastructure. However, the performance and reliability benefits justify this cost for a production system.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-6</span>
+                    <h3>LLM-Based Planning with Structured Reasoning</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-5, FR-8, NFR-10</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>The Planner agent uses a large language model to generate optimization recommendations, combining historical data, current metrics, and domain knowledge.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Handling Complexity:</strong> HPC resource optimization involves many interacting factors that are difficult to encode in rules. LLMs can reason about complex scenarios and identify non-obvious patterns, enabling FR-5's sophisticated recommendations.</p>
+                        <p><strong>Adaptability:</strong> New types of optimization opportunities can be addressed by updating prompts and examples rather than rewriting code. This makes the system more maintainable and extensible.</p>
+                        <p><strong>Natural Language Explanations:</strong> LLMs can generate clear explanations of their reasoning, directly supporting NFR-10's requirement for understandable recommendations.</p>
+                        <p><strong>Batch Optimization:</strong> LLMs excel at identifying patterns across multiple similar cases, enabling FR-8's batch optimization capability.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Rule-Based System:</strong> Hardcoded rules would be more predictable but would require extensive tuning and would miss complex interactions. Rules are also difficult to explain to users.</p>
+                        <p><strong>Classical Machine Learning:</strong> ML models could detect patterns but would not provide natural language explanations and would require large labeled datasets that we do not have.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Non-Determinism:</strong> LLM outputs can vary between runs, which is why we require simulation and validation stages. However, the safety mechanisms in DD-4 mitigate this risk.</p>
+                        <p><strong>Computational Cost:</strong> LLM inference is expensive. We mitigate this by caching common scenarios and only invoking the LLM for novel situations.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-7</span>
+                    <h3>Centralized Audit Agent with Immutable Logging</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-10, FR-17, NFR-8, NFR-10</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>All approval workflows and audit logging are handled by a dedicated Audit agent that stores records in an append-only database with cryptographic checksums.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Single Source of Truth:</strong> Centralizing audit logic ensures consistent logging across all agents and prevents fragmented or contradictory records.</p>
+                        <p><strong>Tamper Evidence:</strong> Append-only storage with checksums (NFR-8) makes any attempt to modify logs detectable, providing strong accountability for compliance and forensics.</p>
+                        <p><strong>Clear Approval Workflow:</strong> The Audit agent enforces policy consistently (FR-10) without requiring each agent to implement approval logic.</p>
+                        <p><strong>Reporting:</strong> Centralizing audit data makes it easy to generate comprehensive reports and dashboards showing system activity over time.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Distributed Logging:</strong> Each agent could maintain its own logs. However, this would make correlation difficult and increase the risk of inconsistencies or gaps.</p>
+                        <p><strong>External Audit Service:</strong> We could use a third-party audit platform, but this would introduce external dependencies and potential privacy concerns for cluster data.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Single Point of Bottleneck:</strong> The Audit agent handles all logging, which could become a bottleneck. We address this through efficient async writes and batching.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-8</span>
+                    <h3>Containerized Deployment with Kubernetes</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>NFR-2, NFR-4, NFR-5, NFR-13</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>All ASRO components are packaged as Docker containers and deployed using Kubernetes for orchestration.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Scalability:</strong> Kubernetes can automatically scale agents based on workload, helping meet NFR-2's requirement to handle large clusters.</p>
+                        <p><strong>High Availability:</strong> Kubernetes can automatically restart failed containers and redistribute work, supporting NFR-4 and NFR-5.</p>
+                        <p><strong>Simplified Deployment:</strong> Containers package all dependencies, making deployment consistent across environments. This reduces the setup time mentioned in NFR-12.</p>
+                        <p><strong>Rolling Updates:</strong> Kubernetes supports zero-downtime updates by gradually replacing old containers with new versions, enabling NFR-13's independent component updates.</p>
+                        <p><strong>Industry Standard:</strong> Kubernetes is widely adopted, so administrators are likely to be familiar with it, reducing operational burden.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Virtual Machines:</strong> VMs provide stronger isolation but are heavier and slower to start than containers. For agent workloads, containers offer sufficient isolation with better resource efficiency.</p>
+                        <p><strong>Bare Metal Deployment:</strong> Deploying directly on physical servers would eliminate container overhead but would make scaling and updates much more difficult.</p>
+                        <p><strong>Simpler Orchestration (Docker Compose):</strong> Docker Compose is easier to configure but lacks Kubernetes' sophisticated scheduling, health checking, and scaling capabilities needed for production.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Kubernetes Complexity:</strong> Kubernetes has a steep learning curve. However, this investment pays off through operational benefits at scale.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-9</span>
+                    <h3>Web-Based Dashboard with Real-Time Updates</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-16, NFR-11, NFR-10</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>We provide a React-based single-page application that connects via WebSocket for real-time updates rather than requiring periodic page refreshes.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Responsive Interface:</strong> React's virtual DOM provides fast UI updates, helping meet NFR-11's 2-second response time requirement.</p>
+                        <p><strong>Real-Time Visibility:</strong> WebSocket connections push updates to the dashboard immediately, so administrators see pending approvals and completed actions without delay.</p>
+                        <p><strong>Modern User Experience:</strong> A well-designed web interface lowers the barrier to using ASRO, supporting NFR-10's usability goal.</p>
+                        <p><strong>No Installation Required:</strong> Unlike desktop applications, the web dashboard requires no client-side installation, simplifying deployment.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Command-Line Interface:</strong> A CLI would be lighter weight but would not provide the rich visualizations and interactive approval workflows that administrators need.</p>
+                        <p><strong>Polling-Based Updates:</strong> HTTP polling would be simpler than WebSockets but would increase latency and server load.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Development Effort:</strong> Building a quality web interface requires significant frontend development. However, this investment improves adoption and operational efficiency.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="decision">
+                <div class="decision-header">
+                    <span class="decision-id">DD-10</span>
+                    <h3>Dry-Run Mode for All Actions</h3>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-subsection">
+                        <h4>Requirements Addressed</h4>
+                        <p>FR-9, NFR-12</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Decision</h4>
+                        <p>The Executor agent supports a dry-run mode where it logs all actions it would take without actually modifying cluster state.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Rationale</h4>
+                        <p><strong>Safe Testing:</strong> Administrators can validate ASRO's behavior in production environments without risk, which is essential during initial deployment (NFR-12).</p>
+                        <p><strong>Debugging:</strong> Dry-run mode helps diagnose issues in action generation and execution logic.</p>
+                        <p><strong>Confidence Building:</strong> Operators can observe what ASRO would do before enabling automatic execution, reducing deployment anxiety.</p>
+                        <p><strong>Compliance:</strong> Some organizations require approval workflows to include a "what-if" analysis, which dry-run mode provides.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Alternatives Considered</h4>
+                        <p><strong>Simulation Only:</strong> The simulator provides predictions but does not exercise actual execution paths. Dry-run mode complements simulation by testing the real code paths.</p>
+                    </div>
+                    <div class="decision-subsection">
+                        <h4>Trade-offs</h4>
+                        <p><strong>Implementation Complexity:</strong> All execution code must distinguish between dry-run and real execution. This requires careful design but is worthwhile for the safety benefits.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="summary">
+            <h2>Summary</h2>
+            <p>ASRO's design reflects careful balancing of competing concerns. We prioritize safety and transparency because operators must trust the system with critical infrastructure. We choose proven technologies like Kafka and Kubernetes to reduce operational risk. We accept increased complexity where it provides clear benefits in reliability, scalability, or maintainability.</p>
+            <p>The multi-stage safety process (DD-4) and Model Context Protocol integration (DD-3) are particularly critical for earning operator trust. The multi-agent architecture (DD-1) and dual communication channels (DD-2) provide the foundation for a scalable, resilient system that can grow with cluster size.</p>
+            <p>Each decision is grounded in specific requirements and evaluated against realistic alternatives. Where we introduce complexity, we do so deliberately and with clear rationale.</p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ASRO Design Team | CS 5744: Software Design and Quality</p>
+        </div>
+    </footer>
+</body>
+</html>

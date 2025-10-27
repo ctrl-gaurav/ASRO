@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASRO - Agentic Slurm Resource Optimizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">ASRO</a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="requirements.html">Requirements</a></li>
+                <li><a href="architecture.html">Architecture</a></li>
+                <li><a href="rationale.html">Design Rationale</a></li>
+                <li><a href="traceability.html">Traceability</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Agentic Slurm Resource Optimizer</h1>
+            <p class="subtitle">An intelligent AI system for optimizing HPC cluster resource allocation and scheduling</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="overview">
+            <h2>Project Overview</h2>
+            <p>The Agentic Slurm Resource Optimizer (ASRO) addresses critical inefficiencies in high-performance computing clusters. When jobs run with incorrect resource mappings or oversized requests, valuable GPU and CPU resources go to waste while job queues grow longer. ASRO provides an automated solution that detects these problems, suggests fixes, and implements changes safely with minimal human intervention.</p>
+        </section>
+
+        <section class="problem-statement">
+            <h2>The Problem</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>Resource Waste</h3>
+                    <p>Jobs often request more GPUs or CPUs than they actually use, leading to underutilization and blocked resources for other users.</p>
+                </div>
+                <div class="card">
+                    <h3>Configuration Errors</h3>
+                    <p>Incorrect GPU bindings and resource mappings cause jobs to fail or run inefficiently, requiring manual investigation and fixes.</p>
+                </div>
+                <div class="card">
+                    <h3>Manual Overhead</h3>
+                    <p>System administrators spend significant time diagnosing issues, tuning parameters, and managing resource allocation manually.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="solution">
+            <h2>Our Solution</h2>
+            <p>ASRO combines real-time monitoring, historical profiling, AI-powered planning, and safe execution to automatically optimize cluster resources. The system uses multiple specialized agents that work together to identify problems, generate solutions, and apply changes with appropriate safeguards.</p>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Intelligent Monitoring</h3>
+                    <p>Continuously tracks resource usage patterns and detects anomalies in real-time.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Smart Optimization</h3>
+                    <p>Uses machine learning to suggest optimal resource allocations based on historical data.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Safe Execution</h3>
+                    <p>Applies changes through a controlled process with simulation, approval, and rollback capabilities.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h3>Complete Auditing</h3>
+                    <p>Maintains detailed logs of all decisions and actions for accountability and analysis.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="team">
+            <h2>Design Team</h2>
+            <div class="team-grid">
+                <div class="team-member">Gaurav Srivastava</div>
+                <div class="team-member">Aafiya Hussain</div>
+                <div class="team-member">Najibul Haque Sarker</div>
+                <div class="team-member">Zaber Ibn Abdul Hakim</div>
+                <div class="team-member">Ali Asgarov</div>
+            </div>
+        </section>
+
+        <section class="navigation-footer">
+            <h2>Explore the Design</h2>
+            <div class="nav-cards">
+                <a href="requirements.html" class="nav-card">
+                    <h3>Requirements</h3>
+                    <p>Detailed functional and non-functional requirements for ASRO</p>
+                </a>
+                <a href="architecture.html" class="nav-card">
+                    <h3>Architecture</h3>
+                    <p>High-level system design with component diagrams and interactions</p>
+                </a>
+                <a href="rationale.html" class="nav-card">
+                    <h3>Design Rationale</h3>
+                    <p>Justification for key architectural decisions and trade-offs</p>
+                </a>
+                <a href="traceability.html" class="nav-card">
+                    <h3>Traceability Matrix</h3>
+                    <p>Mapping between requirements and design components</p>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ASRO Design Team | CS 5744: Software Design and Quality</p>
+        </div>
+    </footer>
+</body>
+</html>

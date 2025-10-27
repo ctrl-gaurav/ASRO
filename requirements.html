@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirements - ASRO</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">ASRO</a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="requirements.html" class="active">Requirements</a></li>
+                <li><a href="architecture.html">Architecture</a></li>
+                <li><a href="rationale.html">Design Rationale</a></li>
+                <li><a href="traceability.html">Traceability</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>Requirements Summary</h1>
+            <p>Comprehensive specification of functional and non-functional requirements for ASRO</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="requirements-intro">
+            <h2>System Overview</h2>
+            <div class="info-box">
+                <p><strong>Customer:</strong> HPC Center Administrators and Research Computing Facilities</p>
+                <p><strong>Primary Users:</strong> System administrators, cluster operators, and computational researchers</p>
+                <p><strong>Purpose:</strong> Automatically detect and resolve resource allocation inefficiencies in Slurm-managed HPC clusters to improve GPU/CPU utilization and reduce manual intervention</p>
+            </div>
+        </section>
+
+        <section class="requirements-section">
+            <h2>Functional Requirements</h2>
+
+            <div class="requirement-category">
+                <h3>Resource Monitoring and Detection</h3>
+
+                <div class="requirement">
+                    <div class="req-id">FR-1</div>
+                    <div class="req-content">
+                        <h4>Real-time Resource Monitoring</h4>
+                        <p>The system shall continuously monitor GPU, CPU, and memory utilization across all compute nodes using metrics from Prometheus, Slurm accounting tools, and system-level utilities.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-2</div>
+                    <div class="req-content">
+                        <h4>GPU Mapping Validation</h4>
+                        <p>The system shall verify that job processes are correctly bound to their allocated GPU devices by cross-checking nvidia-smi output with Slurm job assignments.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-3</div>
+                    <div class="req-content">
+                        <h4>Anomaly Detection</h4>
+                        <p>The system shall identify jobs exhibiting abnormal resource usage patterns, including underutilization of requested resources by more than 30% for sustained periods exceeding 15 minutes.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-4</div>
+                    <div class="req-content">
+                        <h4>Historical Profiling</h4>
+                        <p>The system shall maintain historical resource usage profiles for individual jobs, users, and job types by analyzing at least 90 days of Slurm accounting data and telemetry logs.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Analysis and Planning</h3>
+
+                <div class="requirement">
+                    <div class="req-id">FR-5</div>
+                    <div class="req-content">
+                        <h4>Resource Optimization Recommendations</h4>
+                        <p>The system shall generate ranked optimization actions including GPU rebinding, resource request right-sizing, QoS adjustments, and backfill suggestions based on current and historical data.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-6</div>
+                    <div class="req-content">
+                        <h4>Action Simulation</h4>
+                        <p>The system shall simulate proposed changes using a job simulator with recent metrics to predict the impact before actual execution.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-7</div>
+                    <div class="req-content">
+                        <h4>Risk Assessment</h4>
+                        <p>The system shall assign risk scores to each proposed action based on factors including job criticality, potential disruption, and confidence level of the recommendation.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-8</div>
+                    <div class="req-content">
+                        <h4>Batch Optimization</h4>
+                        <p>The system shall identify groups of similar jobs that can benefit from the same optimization and propose batch changes to improve overall cluster efficiency.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Safe Execution and Control</h3>
+
+                <div class="requirement">
+                    <div class="req-id">FR-9</div>
+                    <div class="req-content">
+                        <h4>Dry-run Mode</h4>
+                        <p>The system shall support dry-run execution of all proposed actions, logging what would happen without making actual changes to the cluster state.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-10</div>
+                    <div class="req-content">
+                        <h4>Human Approval Workflow</h4>
+                        <p>The system shall require explicit human approval for actions exceeding a configurable risk threshold before execution.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-11</div>
+                    <div class="req-content">
+                        <h4>Canary Deployment</h4>
+                        <p>The system shall apply high-risk changes to a small subset of affected jobs first and monitor outcomes before broader rollout.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-12</div>
+                    <div class="req-content">
+                        <h4>Automatic Rollback</h4>
+                        <p>The system shall automatically revert changes if post-execution metrics indicate degraded performance or increased failure rates compared to baseline.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-13</div>
+                    <div class="req-content">
+                        <h4>Job Control Operations</h4>
+                        <p>The system shall interact with Slurm to hold, requeue, modify, and restart jobs through the slurmrestd API and scontrol commands.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-14</div>
+                    <div class="req-content">
+                        <h4>Checkpoint-aware Restart</h4>
+                        <p>The system shall coordinate with application-level checkpointing mechanisms to restart jobs from saved states when modifying running jobs.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Communication and Transparency</h3>
+
+                <div class="requirement">
+                    <div class="req-id">FR-15</div>
+                    <div class="req-content">
+                        <h4>User Notification</h4>
+                        <p>The system shall notify job owners when their jobs are identified for optimization, explaining the issue detected and the proposed solution.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-16</div>
+                    <div class="req-content">
+                        <h4>Web Dashboard</h4>
+                        <p>The system shall provide a web interface displaying pending recommendations, approval requests, active optimizations, and historical actions.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-17</div>
+                    <div class="req-content">
+                        <h4>Audit Trail</h4>
+                        <p>The system shall log all detected issues, proposed actions, approval decisions, execution steps, and outcomes in a searchable audit database.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Integration and Extensibility</h3>
+
+                <div class="requirement">
+                    <div class="req-id">FR-18</div>
+                    <div class="req-content">
+                        <h4>Multi-cluster Support</h4>
+                        <p>The system shall support management of multiple independent Slurm clusters from a single ASRO deployment.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-19</div>
+                    <div class="req-content">
+                        <h4>Policy Customization</h4>
+                        <p>The system shall allow administrators to define custom optimization policies, risk thresholds, and approval requirements through configuration files.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">FR-20</div>
+                    <div class="req-content">
+                        <h4>Tool Integration via MCP</h4>
+                        <p>The system shall access external tools and functions through the Model Context Protocol to ensure safe and auditable interactions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="requirements-section">
+            <h2>Non-Functional Requirements</h2>
+
+            <div class="requirement-category">
+                <h3>Performance</h3>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-1</div>
+                    <div class="req-content">
+                        <h4>Monitoring Latency</h4>
+                        <p>The system shall process incoming metrics and update resource profiles with a maximum latency of 60 seconds from metric collection.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-2</div>
+                    <div class="req-content">
+                        <h4>Scalability</h4>
+                        <p>The system shall handle clusters with up to 10,000 compute nodes and 100,000 concurrent jobs without degradation in monitoring or recommendation generation.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-3</div>
+                    <div class="req-content">
+                        <h4>Action Generation Time</h4>
+                        <p>The system shall generate optimization recommendations within 5 minutes of detecting an anomaly or receiving a request.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Reliability</h3>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-4</div>
+                    <div class="req-content">
+                        <h4>System Availability</h4>
+                        <p>The monitoring and audit components shall maintain 99.9% uptime to ensure continuous cluster oversight.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-5</div>
+                    <div class="req-content">
+                        <h4>Fault Tolerance</h4>
+                        <p>The system shall continue monitoring and logging even if the planning or execution components fail, and shall recover gracefully from component restarts.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-6</div>
+                    <div class="req-content">
+                        <h4>Data Persistence</h4>
+                        <p>The system shall persist all audit logs, historical profiles, and pending actions to durable storage to survive system failures.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Security</h3>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-7</div>
+                    <div class="req-content">
+                        <h4>Authentication and Authorization</h4>
+                        <p>The system shall authenticate all users and agents using mutual TLS certificates and enforce role-based access control for approval and configuration operations.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-8</div>
+                    <div class="req-content">
+                        <h4>Audit Immutability</h4>
+                        <p>The system shall store audit logs in append-only format with cryptographic integrity checks to prevent tampering.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-9</div>
+                    <div class="req-content">
+                        <h4>Secure Communication</h4>
+                        <p>All inter-agent and client-server communications shall use TLS 1.3 or higher with strong cipher suites.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Usability</h3>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-10</div>
+                    <div class="req-content">
+                        <h4>Explanation Quality</h4>
+                        <p>The system shall provide clear, non-technical explanations for all recommendations that can be understood by users without deep HPC expertise.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-11</div>
+                    <div class="req-content">
+                        <h4>Dashboard Responsiveness</h4>
+                        <p>The web interface shall render all views and respond to user interactions within 2 seconds under normal load.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-12</div>
+                    <div class="req-content">
+                        <h4>Configuration Simplicity</h4>
+                        <p>Initial deployment and configuration shall require no more than 8 hours for a competent system administrator familiar with Slurm.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirement-category">
+                <h3>Maintainability</h3>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-13</div>
+                    <div class="req-content">
+                        <h4>Modular Architecture</h4>
+                        <p>The system shall be designed with clear separation between agents, allowing individual components to be updated or replaced without full system redeployment.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-14</div>
+                    <div class="req-content">
+                        <h4>Logging and Diagnostics</h4>
+                        <p>The system shall provide structured logging with configurable verbosity levels and expose health check endpoints for all components.</p>
+                    </div>
+                </div>
+
+                <div class="requirement">
+                    <div class="req-id">NFR-15</div>
+                    <div class="req-content">
+                        <h4>API Stability</h4>
+                        <p>The system shall maintain backward-compatible APIs between agents and external integrations across minor version updates.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ASRO Design Team | CS 5744: Software Design and Quality</p>
+        </div>
+    </footer>
+</body>
+</html>
