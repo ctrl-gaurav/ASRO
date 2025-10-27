@@ -1,6 +1,6 @@
 # ASRO - Agentic Slurm Resource Optimizer
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://ctrl-gaurav.github.io/asro.github.io/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://ctrl-gaurav.github.io/ASRO/)
 [![License](https://img.shields.io/badge/license-Academic-blue)]()
 [![Status](https://img.shields.io/badge/status-active-success)]()
 
@@ -21,7 +21,7 @@ These problems cost research facilities thousands of dollars daily and slow down
 
 ASRO is an intelligent multi-agent system that continuously monitors your HPC cluster, identifies inefficiencies, and safely applies optimizations with minimal human intervention. It combines real-time monitoring, AI-powered planning, and multi-stage safety mechanisms to keep your cluster running at peak efficiency.
 
-**[View Live Documentation →](https://ctrl-gaurav.github.io/asro.github.io/)**
+**[View Live Documentation →](https://ctrl-gaurav.github.io/ASRO/)**
 
 ## ✨ Key Features
 
@@ -85,31 +85,31 @@ ASRO implements a sophisticated multi-agent architecture with clear separation o
 - **10 Design Decisions** - Thoroughly justified architectural choices
 - **100% Traceability** - Complete mapping from requirements to implementation
 
-[Explore Full Architecture →](https://ctrl-gaurav.github.io/asro.github.io/architecture.html)
+[Explore Full Architecture →](https://ctrl-gaurav.github.io/ASRO/architecture.html)
 
 ## 📚 Documentation
 
 Our comprehensive design documentation covers every aspect of the system:
 
-### 📋 [Requirements Specification](https://ctrl-gaurav.github.io/asro.github.io/requirements.html)
+### 📋 [Requirements Specification](https://ctrl-gaurav.github.io/ASRO/requirements.html)
 - 20 functional requirements covering monitoring, planning, execution, and communication
 - 15 non-functional requirements for performance, security, and reliability
 - Clear customer and user personas
 
-### 🏛️ [System Architecture](https://ctrl-gaurav.github.io/asro.github.io/architecture.html)
+### 🏛️ [System Architecture](https://ctrl-gaurav.github.io/ASRO/architecture.html)
 - Interactive component diagrams
 - Detailed agent descriptions
 - Communication protocols and data flows
 - Deployment architecture
 - Technology stack
 
-### 💭 [Design Rationale](https://ctrl-gaurav.github.io/asro.github.io/rationale.html)
+### 💭 [Design Rationale](https://ctrl-gaurav.github.io/ASRO/rationale.html)
 - 10 key architectural decisions explained
 - Alternatives considered and rejected
 - Trade-off analysis
 - Requirements-driven justifications
 
-### 🔗 [Traceability Matrix](https://ctrl-gaurav.github.io/asro.github.io/traceability.html)
+### 🔗 [Traceability Matrix](https://ctrl-gaurav.github.io/ASRO/traceability.html)
 - Forward mapping: Requirements → Components
 - Backward mapping: Components → Requirements
 - Coverage validation
@@ -160,7 +160,7 @@ ASRO addresses these challenges through intelligent automation while maintaining
 
 ## 🌐 Live Demo
 
-**[Visit the complete design documentation →](https://ctrl-gaurav.github.io/asro.github.io/)**
+**[Visit the complete design documentation →](https://ctrl-gaurav.github.io/ASRO/)**
 
 The documentation website features:
 - ✅ Professional, responsive design
@@ -179,6 +179,6 @@ This project is submitted as academic coursework for CS 5744: Software Design an
 
 **CS 5744: Software Design and Quality** | **Fall 2025** | **Virginia Tech**
 
-[Documentation](https://ctrl-gaurav.github.io/asro.github.io/) • [Requirements](https://ctrl-gaurav.github.io/asro.github.io/requirements.html) • [Architecture](https://ctrl-gaurav.github.io/asro.github.io/architecture.html) • [Rationale](https://ctrl-gaurav.github.io/asro.github.io/rationale.html)
+[Documentation](https://ctrl-gaurav.github.io/ASRO/) • [Requirements](https://ctrl-gaurav.github.io/ASRO/requirements.html) • [Architecture](https://ctrl-gaurav.github.io/ASRO/architecture.html) • [Rationale](https://ctrl-gaurav.github.io/ASRO/rationale.html)
 
 </div>
