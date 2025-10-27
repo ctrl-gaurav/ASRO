@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Cases - ASRO</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">ASRO</a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usecases.html" class="active">Use Cases</a></li>
+                <li><a href="requirements.html">Requirements</a></li>
+                <li><a href="architecture.html">Architecture (HLD)</a></li>
+                <li><a href="agents.html">Agents/Modules</a></li>
+                <li><a href="rationale.html">Design Rationale</a></li>
+                <li><a href="traceability.html">Traceability Matrix</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>Use Cases</h1>
+            <p>Real-world scenarios demonstrating ASRO's capabilities and value</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="usecase-intro">
+            <h2>Overview</h2>
+            <p>ASRO addresses common operational challenges in HPC environments through intelligent automation. These use cases demonstrate how the system detects problems, generates solutions, and safely implements changes to improve cluster efficiency.</p>
+        </section>
+
+        <section class="usecase-section">
+            <div class="usecase">
+                <div class="usecase-header">
+                    <span class="usecase-id">UC-1</span>
+                    <h3>Detecting and Fixing Incorrect GPU Binding</h3>
+                </div>
+                <div class="usecase-content">
+                    <div class="usecase-subsection">
+                        <h4>Scenario</h4>
+                        <p>A researcher submits a deep learning training job requesting 4 GPUs on a compute node. The job starts running, but the training script is accessing GPUs that were not allocated by Slurm, causing low utilization alerts and potential interference with other users' jobs.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Actors</h4>
+                        <ul>
+                            <li><strong>Primary:</strong> ASRO Monitor Agent, Planner Agent, Executor Agent</li>
+                            <li><strong>Secondary:</strong> System Administrator, Job Owner</li>
+                        </ul>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Flow</h4>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+sequenceDiagram
+    participant User as Researcher
+    participant Slurm as Slurm Scheduler
+    participant Mon as Monitor Agent
+    participant Plan as Planner Agent
+    participant Exec as Executor Agent
+    participant Audit as Audit Agent
+
+    User->>Slurm: Submit job requesting 4 GPUs
+    Slurm->>Slurm: Allocate GPUs 0-3 on node
+    Slurm-->>User: Job started
+
+    Mon->>Mon: Check GPU utilization every 60s
+    Mon->>Mon: Query nvidia-smi on compute node
+    Mon->>Mon: Detect: Job using GPUs 4-7, not 0-3
+    Mon->>Plan: Alert: GPU binding mismatch detected
+
+    Plan->>Plan: Analyze job configuration
+    Plan->>Plan: Generate fix: Set CUDA_VISIBLE_DEVICES
+    Plan->>Plan: Risk assessment: Medium
+    Plan->>Audit: Request approval for job modification
+
+    Audit->>Exec: Approval granted (auto, medium risk)
+    Exec->>Slurm: Hold job temporarily
+    Exec->>Slurm: Modify job environment variables
+    Exec->>Slurm: Resume job with correct GPU binding
+
+    Mon->>Mon: Verify GPU mapping corrected
+    Mon->>Audit: Confirm fix successful
+    Audit->>User: Notify: Job optimized for correct GPUs
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Outcome</h4>
+                        <p><strong>Success:</strong> The job is reconfigured to use the correct GPUs without user intervention. Training continues with proper resource allocation, avoiding conflicts and improving utilization.</p>
+                        <p><strong>Metrics:</strong> GPU utilization increases from 15% to 92%, job interference eliminated, no manual admin time required.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Requirements Satisfied</h4>
+                        <p>FR-1, FR-2, FR-3, FR-5, FR-11, FR-13, FR-15, NFR-1</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="usecase">
+                <div class="usecase-header">
+                    <span class="usecase-id">UC-2</span>
+                    <h3>Right-Sizing Overprovisioned GPU Requests</h3>
+                </div>
+                <div class="usecase-content">
+                    <div class="usecase-subsection">
+                        <h4>Scenario</h4>
+                        <p>A research group regularly submits jobs requesting 8 GPUs, but historical data shows their workload consistently uses only 3-4 GPUs effectively. The overprovisioning blocks resources and increases queue times for other users.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Actors</h4>
+                        <ul>
+                            <li><strong>Primary:</strong> ASRO Profiler Agent, Planner Agent, Audit Agent</li>
+                            <li><strong>Secondary:</strong> Research Group Lead, System Administrator</li>
+                        </ul>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Flow</h4>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+sequenceDiagram
+    participant User as Research Group
+    participant Slurm as Slurm Scheduler
+    participant Mon as Monitor Agent
+    participant Prof as Profiler Agent
+    participant Plan as Planner Agent
+    participant Audit as Audit Agent
+    participant Admin as Administrator
+
+    loop Daily jobs over 30 days
+        User->>Slurm: Submit job requesting 8 GPUs
+        Mon->>Mon: Track actual GPU utilization
+        Mon->>Prof: Send utilization metrics
+    end
+
+    Prof->>Prof: Analyze 30-day usage pattern
+    Prof->>Prof: Calculate: Avg 3.8 GPUs used (47% util)
+    Prof->>Plan: Pattern detected: Consistent underutilization
+
+    Plan->>Plan: Generate recommendation
+    Plan->>Plan: Suggest: Reduce request to 4 GPUs
+    Plan->>Plan: Estimate: 25% faster queue time
+    Plan->>Plan: Risk assessment: High (user visible change)
+
+    Plan->>Audit: Submit recommendation
+    Audit->>Admin: Request approval (high risk)
+    Admin->>Audit: Approve with notification to user
+
+    Audit->>User: Notify: Job template will be optimized
+    Audit->>User: Explain: Based on 30-day usage analysis
+    Audit->>Plan: Proceed with optimization
+
+    Plan->>Slurm: Update user's job template to 4 GPUs
+
+    loop Next job submissions
+        User->>Slurm: Submit job (auto-adjusted to 4 GPUs)
+        Mon->>Mon: Monitor performance impact
+        Mon->>Audit: Confirm: No degradation, faster starts
+    end
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Outcome</h4>
+                        <p><strong>Success:</strong> Jobs are right-sized to 4 GPUs based on actual usage patterns. Queue times decrease by 25%, cluster utilization improves, and no performance degradation occurs.</p>
+                        <p><strong>Metrics:</strong> 4 GPUs freed per job, 25% reduction in queue time, 33% improvement in cluster-wide GPU utilization.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Requirements Satisfied</h4>
+                        <p>FR-3, FR-4, FR-5, FR-8, FR-10, FR-15, FR-16, NFR-3, NFR-10</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="usecase">
+                <div class="usecase-header">
+                    <span class="usecase-id">UC-3</span>
+                    <h3>Automatic Rollback After Failed Optimization</h3>
+                </div>
+                <div class="usecase-content">
+                    <div class="usecase-subsection">
+                        <h4>Scenario</h4>
+                        <p>ASRO recommends changing a job's QoS to improve scheduling priority based on historical patterns. After the change is applied, the job experiences unexpected performance degradation due to different resource allocation policies in the new QoS tier.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Actors</h4>
+                        <ul>
+                            <li><strong>Primary:</strong> ASRO Executor Agent, Monitor Agent, Audit Agent</li>
+                            <li><strong>Secondary:</strong> Job Owner, System Administrator</li>
+                        </ul>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Flow</h4>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+sequenceDiagram
+    participant Plan as Planner Agent
+    participant Sim as Job Simulator
+    participant Exec as Executor Agent
+    participant Slurm as Slurm Scheduler
+    participant Mon as Monitor Agent
+    participant Audit as Audit Agent
+    participant User as Job Owner
+
+    Plan->>Sim: Simulate QoS change
+    Sim-->>Plan: Prediction: 15% better throughput
+    Plan->>Exec: Recommend: Change to QoS "high-priority"
+
+    Exec->>Exec: Create checkpoint of current state
+    Exec->>Slurm: Apply canary: Change 10% of jobs
+    Exec->>Mon: Request: Monitor canary metrics
+
+    Mon->>Mon: Track performance for 15 minutes
+    Mon->>Mon: Detect: Throughput decreased 20%
+    Mon->>Mon: Detect: Job completion time increased
+    Mon->>Exec: Alert: Metrics worse than baseline
+
+    Exec->>Exec: Trigger automatic rollback
+    Exec->>Slurm: Revert canary jobs to original QoS
+    Exec->>Slurm: Cancel pending changes
+
+    Mon->>Mon: Verify metrics return to baseline
+    Mon->>Audit: Confirm rollback successful
+
+    Audit->>Audit: Log incident with full context
+    Audit->>User: Notify: Attempted optimization reverted
+    Audit->>Plan: Feedback: QoS change ineffective
+
+    Plan->>Plan: Update model: Avoid this QoS change
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Outcome</h4>
+                        <p><strong>Success:</strong> The system detects the negative impact within 15 minutes and automatically reverts the change. Jobs return to normal performance with minimal disruption.</p>
+                        <p><strong>Metrics:</strong> 10% of jobs affected for 15 minutes, automatic recovery without manual intervention, learning applied to future recommendations.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Requirements Satisfied</h4>
+                        <p>FR-6, FR-11, FR-12, FR-15, FR-17, NFR-5, NFR-10</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="usecase">
+                <div class="usecase-header">
+                    <span class="usecase-id">UC-4</span>
+                    <h3>Batch Optimization for Similar Jobs</h3>
+                </div>
+                <div class="usecase-content">
+                    <div class="usecase-subsection">
+                        <h4>Scenario</h4>
+                        <p>Multiple users from the same research group submit similar bioinformatics jobs that all exhibit the same pattern: high memory requests but low actual usage. ASRO identifies this pattern and proposes a batch optimization.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Actors</h4>
+                        <ul>
+                            <li><strong>Primary:</strong> ASRO Profiler Agent, Planner Agent, Audit Agent</li>
+                            <li><strong>Secondary:</strong> Research Group, System Administrator</li>
+                        </ul>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Flow</h4>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+sequenceDiagram
+    participant Users as Research Group
+    participant Slurm as Slurm Scheduler
+    participant Prof as Profiler Agent
+    participant Plan as Planner Agent
+    participant Audit as Audit Agent
+    participant Admin as Administrator
+
+    loop Multiple users, 50 jobs
+        Users->>Slurm: Submit jobs: 256GB memory requested
+        Slurm->>Slurm: Allocate high-memory nodes
+    end
+
+    Prof->>Prof: Analyze all jobs in group
+    Prof->>Prof: Pattern: Same script, same underutilization
+    Prof->>Prof: Calculate: Avg 64GB actually used (25%)
+    Prof->>Prof: Identify: 50 similar jobs
+
+    Prof->>Plan: Alert: Batch optimization opportunity
+    Plan->>Plan: Generate batch recommendation
+    Plan->>Plan: Propose: Reduce memory to 96GB for all
+    Plan->>Plan: Estimate: Free 8GB nodes for other users
+    Plan->>Plan: Risk: Medium (affects group workflow)
+
+    Plan->>Audit: Submit batch recommendation
+    Audit->>Admin: Present: Optimize 50 similar jobs
+    Admin->>Audit: Approve batch change
+
+    Audit->>Users: Notify group lead of optimization
+    Audit->>Plan: Proceed with batch update
+
+    Plan->>Slurm: Update job templates for group
+    Plan->>Slurm: Apply to pending jobs in queue
+
+    loop Future job submissions
+        Users->>Slurm: Submit jobs (auto-adjusted to 96GB)
+        Prof->>Prof: Monitor: Adequate memory, no OOM
+        Prof->>Audit: Success: Batch optimization effective
+    end
+
+    Audit->>Admin: Report: 8 high-mem nodes freed
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Outcome</h4>
+                        <p><strong>Success:</strong> 50 similar jobs are optimized in one operation, reducing memory requests by 62% while maintaining adequate resources. High-memory nodes become available for jobs that truly need them.</p>
+                        <p><strong>Metrics:</strong> 8 TB of memory freed across cluster, 50 jobs optimized with single decision, zero out-of-memory failures.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Requirements Satisfied</h4>
+                        <p>FR-4, FR-5, FR-8, FR-10, FR-15, FR-19, NFR-2, NFR-10</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="usecase">
+                <div class="usecase-header">
+                    <span class="usecase-id">UC-5</span>
+                    <h3>Proactive Backfill Scheduling Optimization</h3>
+                </div>
+                <div class="usecase-content">
+                    <div class="usecase-subsection">
+                        <h4>Scenario</h4>
+                        <p>The cluster queue contains many short-duration jobs waiting behind a few long-running jobs. ASRO identifies opportunities to backfill short jobs into available slots, improving overall throughput without delaying long jobs.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Actors</h4>
+                        <ul>
+                            <li><strong>Primary:</strong> ASRO Planner Agent, Monitor Agent, Executor Agent</li>
+                            <li><strong>Secondary:</strong> All Cluster Users, System Administrator</li>
+                        </ul>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Flow</h4>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+sequenceDiagram
+    participant Users as Multiple Users
+    participant Slurm as Slurm Scheduler
+    participant Mon as Monitor Agent
+    participant Prof as Profiler Agent
+    participant Plan as Planner Agent
+    participant Sim as Job Simulator
+    participant Exec as Executor Agent
+
+    Users->>Slurm: Mix of long (24h) and short (1h) jobs queued
+    Slurm->>Slurm: Default FIFO scheduling
+
+    Mon->>Mon: Detect: 50 short jobs waiting
+    Mon->>Mon: Detect: Large gap before next long job
+    Mon->>Plan: Alert: Backfill opportunity identified
+
+    Plan->>Prof: Query: Historical duration for short jobs
+    Prof-->>Plan: Return: Avg 45min, 95th percentile 65min
+
+    Plan->>Sim: Simulate backfill scenarios
+    Plan->>Sim: Test: Fit jobs in 2-hour window
+    Sim-->>Plan: Prediction: 35 jobs can complete safely
+
+    Plan->>Plan: Generate backfill recommendations
+    Plan->>Plan: Rank jobs by duration confidence
+    Plan->>Plan: Risk: Low (won't delay critical jobs)
+
+    Plan->>Exec: Execute backfill optimization
+    Exec->>Slurm: Adjust QoS for 35 short jobs
+    Exec->>Slurm: Promote to backfill partition
+
+    Slurm->>Slurm: Schedule promoted jobs immediately
+
+    Mon->>Mon: Track: Jobs completing as predicted
+    Mon->>Mon: Verify: No delay to long jobs
+
+    Mon->>Exec: Confirm: Backfill successful
+    Exec->>Plan: Feedback: Update model with success
+
+    Note over Users,Exec: Result: 35 jobs completed 23h early
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Outcome</h4>
+                        <p><strong>Success:</strong> 35 short jobs complete nearly a day earlier without affecting long-running jobs. Overall cluster throughput increases by 18% during the optimization window.</p>
+                        <p><strong>Metrics:</strong> 35 jobs accelerated by 23 hours, 18% throughput improvement, zero delay to priority jobs.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Requirements Satisfied</h4>
+                        <p>FR-4, FR-5, FR-6, FR-7, FR-13, NFR-1, NFR-2, NFR-3</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="usecase">
+                <div class="usecase-header">
+                    <span class="usecase-id">UC-6</span>
+                    <h3>Multi-Cluster Resource Balancing</h3>
+                </div>
+                <div class="usecase-content">
+                    <div class="usecase-subsection">
+                        <h4>Scenario</h4>
+                        <p>An organization operates two HPC clusters: one heavily loaded with deep learning jobs, another underutilized with capacity for flexible workloads. ASRO identifies jobs that can be migrated to balance load across clusters.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Actors</h4>
+                        <ul>
+                            <li><strong>Primary:</strong> ASRO Monitor Agent (both clusters), Planner Agent, Audit Agent</li>
+                            <li><strong>Secondary:</strong> HPC Center Director, Job Owners</li>
+                        </ul>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Flow</h4>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+sequenceDiagram
+    participant Users as Job Submitters
+    participant C1 as Cluster 1 (Overloaded)
+    participant C2 as Cluster 2 (Available)
+    participant Mon1 as Monitor Agent C1
+    participant Mon2 as Monitor Agent C2
+    participant Plan as Planner Agent
+    participant Audit as Audit Agent
+    participant Dir as HPC Director
+
+    Users->>C1: Submit jobs to primary cluster
+    C1->>C1: Queue depth: 200 jobs, wait 48h
+
+    Mon1->>Mon1: Track cluster utilization: 98%
+    Mon2->>Mon2: Track cluster utilization: 45%
+
+    Mon1->>Plan: Alert: Cluster 1 heavily loaded
+    Mon2->>Plan: Info: Cluster 2 has capacity
+
+    Plan->>Plan: Analyze: 50 jobs are cluster-agnostic
+    Plan->>Plan: Identify: Jobs without node-specific needs
+    Plan->>Plan: Calculate: Migration would save 36h wait time
+    Plan->>Plan: Risk: Medium (user visibility)
+
+    Plan->>Audit: Recommend: Migrate 50 jobs to Cluster 2
+    Audit->>Dir: Request approval for cross-cluster migration
+    Dir->>Audit: Approve with user notification
+
+    Audit->>Users: Notify: Jobs redirected to faster cluster
+    Audit->>Plan: Proceed with migration
+
+    Plan->>C1: Modify 50 job submissions
+    Plan->>C2: Redirect jobs to Cluster 2
+
+    C2->>C2: Schedule jobs immediately
+
+    Mon2->>Mon2: Monitor: Jobs running normally
+    Mon1->>Mon1: Observe: Queue reduced to 150 jobs
+
+    Mon2->>Audit: Confirm: Successful execution on C2
+    Audit->>Users: Report: Jobs completed 36h early
+    Audit->>Dir: Summary: Load balanced across clusters
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Outcome</h4>
+                        <p><strong>Success:</strong> 50 jobs are transparently migrated to the underutilized cluster, completing 36 hours earlier than they would have on the overloaded cluster. Both clusters achieve better balance.</p>
+                        <p><strong>Metrics:</strong> 36-hour reduction in average wait time, Cluster 1 utilization decreased to 85%, Cluster 2 utilization increased to 62%, improved cross-cluster efficiency.</p>
+                    </div>
+
+                    <div class="usecase-subsection">
+                        <h4>Requirements Satisfied</h4>
+                        <p>FR-1, FR-5, FR-10, FR-15, FR-18, NFR-2, NFR-10</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="usecase-summary">
+            <h2>Use Case Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>UC-1: GPU Binding Fix</h3>
+                    <p><strong>Impact:</strong> Immediate correction of misconfigurations</p>
+                    <p><strong>Benefit:</strong> 77% GPU utilization improvement</p>
+                </div>
+                <div class="summary-card">
+                    <h3>UC-2: Right-Sizing</h3>
+                    <p><strong>Impact:</strong> Optimized resource allocation</p>
+                    <p><strong>Benefit:</strong> 25% faster queue times, 4 GPUs freed</p>
+                </div>
+                <div class="summary-card">
+                    <h3>UC-3: Auto Rollback</h3>
+                    <p><strong>Impact:</strong> Safe experimentation with quick recovery</p>
+                    <p><strong>Benefit:</strong> Zero downtime, automated safety</p>
+                </div>
+                <div class="summary-card">
+                    <h3>UC-4: Batch Optimization</h3>
+                    <p><strong>Impact:</strong> Efficient group-wide improvements</p>
+                    <p><strong>Benefit:</strong> 50 jobs optimized, 8TB memory freed</p>
+                </div>
+                <div class="summary-card">
+                    <h3>UC-5: Backfill Scheduling</h3>
+                    <p><strong>Impact:</strong> Intelligent job scheduling</p>
+                    <p><strong>Benefit:</strong> 35 jobs accelerated by 23 hours</p>
+                </div>
+                <div class="summary-card">
+                    <h3>UC-6: Multi-Cluster Balance</h3>
+                    <p><strong>Impact:</strong> Cross-cluster optimization</p>
+                    <p><strong>Benefit:</strong> 36h wait time reduction</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="actor-roles">
+            <h2>Actor Roles</h2>
+            <div class="roles-grid">
+                <div class="role-card">
+                    <h4>System Actors</h4>
+                    <ul>
+                        <li><strong>Monitor Agent</strong> - Detects anomalies and tracks metrics</li>
+                        <li><strong>Profiler Agent</strong> - Analyzes historical patterns</li>
+                        <li><strong>Planner Agent</strong> - Generates optimization recommendations</li>
+                        <li><strong>Executor Agent</strong> - Implements changes safely</li>
+                        <li><strong>Audit Agent</strong> - Manages approvals and logging</li>
+                    </ul>
+                </div>
+                <div class="role-card">
+                    <h4>Human Actors</h4>
+                    <ul>
+                        <li><strong>Job Owner/Researcher</strong> - Submits jobs and receives notifications</li>
+                        <li><strong>System Administrator</strong> - Approves high-risk changes</li>
+                        <li><strong>Research Group Lead</strong> - Makes decisions for team resources</li>
+                        <li><strong>HPC Director</strong> - Oversees multi-cluster operations</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ASRO Design Team | CS 5744: Software Design and Quality</p>
+        </div>
+    </footer>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#4a90e2',
+                primaryTextColor: '#333',
+                primaryBorderColor: '#2e5c8a',
+                lineColor: '#666',
+                secondaryColor: '#e8f4f8',
+                tertiaryColor: '#f5f5f5'
+            },
+            sequence: {
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10
+            }
+        });
+    </script>
+</body>
+</html>

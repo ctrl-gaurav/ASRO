@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Modules - ASRO</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">ASRO</a>
+                        <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usecases.html">Use Cases</a></li>
+                <li><a href="requirements.html">Requirements</a></li>
+                <li><a href="architecture.html">Architecture (HLD)</a></li>
+                <li><a href="agents.html" class="active">Agents/Modules</a></li>
+                <li><a href="rationale.html">Design Rationale</a></li>
+                <li><a href="traceability.html">Traceability Matrix</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>Agents/Modules</h1>
+            <p>Detailed architecture and responsibilities of ASRO's intelligent agents</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="agents-intro">
+            <h2>Multi-Agent System Overview</h2>
+            <p>ASRO implements a sophisticated multi-agent architecture where five specialized agents collaborate to optimize HPC cluster resources. Each agent has distinct responsibilities, operates autonomously, and communicates through well-defined protocols. This modular design enables independent scaling, fault isolation, and maintainability.</p>
+
+            <div class="agent-principles">
+                <h3>Design Principles</h3>
+                <div class="principles-grid">
+                    <div class="principle-card">
+                        <h4>🎯 Single Responsibility</h4>
+                        <p>Each agent focuses on one aspect of optimization</p>
+                    </div>
+                    <div class="principle-card">
+                        <h4>🔄 Autonomous Operation</h4>
+                        <p>Agents make decisions independently within their domain</p>
+                    </div>
+                    <div class="principle-card">
+                        <h4>🤝 Collaborative Intelligence</h4>
+                        <p>Agents share information to achieve system-wide goals</p>
+                    </div>
+                    <div class="principle-card">
+                        <h4>⚡ Fault Isolation</h4>
+                        <p>Agent failures don't cascade to the entire system</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="agent-detail">
+            <div class="agent-module">
+                <div class="agent-module-header" style="background: linear-gradient(135deg, #66c2a5, #4a9d88);">
+                    <span class="agent-id">Agent-1</span>
+                    <h2>Monitor Agent</h2>
+                    <p class="agent-tagline">Eyes on the Cluster</p>
+                </div>
+
+                <div class="agent-module-content">
+                    <div class="agent-overview">
+                        <h3>Overview</h3>
+                        <p>The Monitor Agent serves as the sensory system of ASRO, continuously collecting and processing resource utilization metrics from across the HPC cluster. It validates resource allocations, detects anomalies in real-time, and triggers alerts when issues are identified.</p>
+                    </div>
+
+                    <div class="agent-architecture">
+                        <h3>Internal Architecture</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+graph TB
+    subgraph "Monitor Agent"
+        Scheduler[Polling Scheduler<br/>60s interval]
+        Collector[Metrics Collector]
+        Validator[GPU Binding Validator]
+        Anomaly[Anomaly Detector<br/>Threshold-based]
+        Aggregator[Data Aggregator]
+        Publisher[Event Publisher]
+    end
+
+    subgraph "External Systems"
+        Prom[Prometheus<br/>Metrics DB]
+        Slurm[Slurm API<br/>sacct/scontrol]
+        Nodes[Compute Nodes<br/>nvidia-smi/htop]
+    end
+
+    subgraph "Data Storage"
+        TSDB[Time-Series DB]
+        Cache[Redis Cache]
+    end
+
+    subgraph "Communication"
+        Kafka[Kafka Topics]
+    end
+
+    Scheduler -->|Trigger| Collector
+    Collector -->|Query| Prom
+    Collector -->|Query| Slurm
+    Collector -->|SSH Execute| Nodes
+
+    Collector -->|Raw Metrics| Validator
+    Collector -->|Raw Metrics| Anomaly
+
+    Validator -->|Binding Status| Aggregator
+    Anomaly -->|Anomaly Events| Aggregator
+
+    Aggregator -->|Store| TSDB
+    Aggregator -->|Cache Hot Data| Cache
+    Aggregator -->|Package Events| Publisher
+
+    Publisher -->|Publish| Kafka
+
+    style Scheduler fill:#e8f4f8
+    style Collector fill:#66c2a5
+    style Validator fill:#66c2a5
+    style Anomaly fill:#fc8d62
+    style Aggregator fill:#66c2a5
+    style Publisher fill:#ffd92f
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-responsibilities">
+                        <h3>Key Responsibilities</h3>
+                        <div class="responsibilities-grid">
+                            <div class="responsibility">
+                                <h4>📊 Metric Collection</h4>
+                                <ul>
+                                    <li>Query Prometheus for GPU, CPU, memory, network metrics every 60 seconds</li>
+                                    <li>Execute nvidia-smi on compute nodes to validate GPU utilization</li>
+                                    <li>Collect Slurm job state and resource allocation data via sacct</li>
+                                    <li>Aggregate metrics across multiple data sources</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>🔍 Resource Validation</h4>
+                                <ul>
+                                    <li>Cross-check GPU assignments with actual process bindings</li>
+                                    <li>Verify CUDA_VISIBLE_DEVICES matches Slurm allocation</li>
+                                    <li>Detect jobs accessing GPUs outside their allocation</li>
+                                    <li>Identify misconfigured containers or runtimes</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>⚠️ Anomaly Detection</h4>
+                                <ul>
+                                    <li>Compare current metrics against expected baselines</li>
+                                    <li>Flag sustained underutilization (< 30% for > 15 minutes)</li>
+                                    <li>Detect sudden performance degradations</li>
+                                    <li>Identify resource contention patterns</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>📡 Event Publishing</h4>
+                                <ul>
+                                    <li>Publish anomaly events to Kafka monitoring topic</li>
+                                    <li>Send real-time alerts for critical issues</li>
+                                    <li>Provide metric snapshots to other agents on request</li>
+                                    <li>Maintain event sequence and timestamps</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-interfaces">
+                        <h3>Interfaces</h3>
+                        <div class="interface-table">
+                            <table>
+                                <tr>
+                                    <th>Interface Type</th>
+                                    <th>Protocol</th>
+                                    <th>Purpose</th>
+                                </tr>
+                                <tr>
+                                    <td>Prometheus Query API</td>
+                                    <td>HTTP/REST</td>
+                                    <td>Fetch time-series metrics</td>
+                                </tr>
+                                <tr>
+                                    <td>Slurm REST API</td>
+                                    <td>slurmrestd</td>
+                                    <td>Query job and node state</td>
+                                </tr>
+                                <tr>
+                                    <td>Compute Nodes</td>
+                                    <td>SSH + nvidia-smi/htop</td>
+                                    <td>Real-time resource checks</td>
+                                </tr>
+                                <tr>
+                                    <td>Event Bus</td>
+                                    <td>Kafka Producer</td>
+                                    <td>Publish monitoring events</td>
+                                </tr>
+                                <tr>
+                                    <td>gRPC Service</td>
+                                    <td>gRPC</td>
+                                    <td>Respond to metric queries from other agents</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="agent-data-flow">
+                        <h3>Data Flow</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+flowchart LR
+    A[Prometheus<br/>Cluster Metrics] -->|Query every 60s| M[Monitor Agent]
+    B[Slurm<br/>Job Data] -->|API Call| M
+    C[Compute Nodes<br/>Live Stats] -->|SSH Check| M
+
+    M -->|Process & Validate| D{Anomaly?}
+
+    D -->|Yes| E[Kafka Event:<br/>Anomaly Detected]
+    D -->|No| F[Update Metrics DB]
+
+    E --> G[Profiler Agent]
+    E --> H[Planner Agent]
+
+    F --> I[Dashboard<br/>Visualization]
+
+    style M fill:#66c2a5,stroke:#4a9d88,stroke-width:3px
+    style E fill:#fc8d62,stroke:#e67451,stroke-width:2px
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-implementation">
+                        <h3>Implementation Details</h3>
+                        <div class="impl-grid">
+                            <div class="impl-item">
+                                <h4>Technology Stack</h4>
+                                <ul>
+                                    <li><strong>Language:</strong> Python 3.11+</li>
+                                    <li><strong>Metrics:</strong> Prometheus Python Client</li>
+                                    <li><strong>SSH:</strong> Paramiko for remote execution</li>
+                                    <li><strong>Messaging:</strong> kafka-python</li>
+                                    <li><strong>Async:</strong> asyncio for concurrent polling</li>
+                                </ul>
+                            </div>
+                            <div class="impl-item">
+                                <h4>Performance Characteristics</h4>
+                                <ul>
+                                    <li><strong>Polling Interval:</strong> 60 seconds (configurable)</li>
+                                    <li><strong>Latency:</strong> < 5 seconds per poll cycle</li>
+                                    <li><strong>Scalability:</strong> Handles 10,000+ nodes</li>
+                                    <li><strong>Concurrency:</strong> 50 parallel metric queries</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agent-module">
+                <div class="agent-module-header" style="background: linear-gradient(135deg, #fc8d62, #e67451);">
+                    <span class="agent-id">Agent-2</span>
+                    <h2>Profiler Agent</h2>
+                    <p class="agent-tagline">Learning from History</p>
+                </div>
+
+                <div class="agent-module-content">
+                    <div class="agent-overview">
+                        <h3>Overview</h3>
+                        <p>The Profiler Agent builds and maintains historical resource usage profiles for jobs, users, and workload types. It analyzes long-term trends, identifies patterns, and predicts expected resource needs to inform optimization decisions.</p>
+                    </div>
+
+                    <div class="agent-architecture">
+                        <h3>Internal Architecture</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+graph LR
+    subgraph "Profiler Agent"
+        Ingest[Event Ingester]
+        Historical[Historical Data Loader<br/>90-day window]
+        Stats[Statistical Analyzer<br/>Mean/Percentiles]
+        Pattern[Pattern Recognizer<br/>ML-based]
+        Predict[Resource Predictor]
+        ProfileDB[Profile Manager]
+    end
+
+    subgraph "Data Sources"
+        Kafka[Kafka Events]
+        Slurm[Slurm Accounting<br/>sacct history]
+        TSDB[Time-Series DB]
+    end
+
+    subgraph "Storage"
+        Redis[Redis<br/>Hot Profiles]
+        Postgres[PostgreSQL<br/>Historical Profiles]
+    end
+
+    subgraph "Consumers"
+        Planner[Planner Agent]
+        Dashboard[Web Dashboard]
+    end
+
+    Kafka -->|Stream| Ingest
+    Slurm -->|Batch Load| Historical
+    TSDB -->|Query| Historical
+
+    Ingest -->|Recent Events| Stats
+    Historical -->|Historical Data| Stats
+
+    Stats -->|Patterns| Pattern
+    Pattern -->|Features| Predict
+
+    Predict -->|Update| ProfileDB
+    Stats -->|Store| ProfileDB
+
+    ProfileDB -->|Cache| Redis
+    ProfileDB -->|Persist| Postgres
+
+    Redis -->|Query| Planner
+    Redis -->|API| Dashboard
+
+    style Ingest fill:#fc8d62
+    style Stats fill:#fc8d62
+    style Pattern fill:#8da0cb
+    style Predict fill:#8da0cb
+    style ProfileDB fill:#fc8d62
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-responsibilities">
+                        <h3>Key Responsibilities</h3>
+                        <div class="responsibilities-grid">
+                            <div class="responsibility">
+                                <h4>📈 Data Aggregation</h4>
+                                <ul>
+                                    <li>Collect 90 days of Slurm accounting data for each job</li>
+                                    <li>Aggregate metrics by job ID, user, and workload type</li>
+                                    <li>Process real-time events from Monitor Agent</li>
+                                    <li>Handle missing or incomplete data gracefully</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>📊 Statistical Analysis</h4>
+                                <ul>
+                                    <li>Calculate mean, median, and percentiles for resource usage</li>
+                                    <li>Compute variance and standard deviation</li>
+                                    <li>Identify usage distributions (normal, bimodal, etc.)</li>
+                                    <li>Track trends over time (increasing/decreasing usage)</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>🧩 Pattern Recognition</h4>
+                                <ul>
+                                    <li>Group similar jobs using clustering algorithms</li>
+                                    <li>Identify job families with consistent resource patterns</li>
+                                    <li>Detect periodic behaviors (daily, weekly cycles)</li>
+                                    <li>Find correlations between job parameters and usage</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>🔮 Predictive Modeling</h4>
+                                <ul>
+                                    <li>Predict expected resource needs for new job submissions</li>
+                                    <li>Estimate job runtime based on historical patterns</li>
+                                    <li>Provide confidence intervals for predictions</li>
+                                    <li>Update models incrementally as new data arrives</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-data-flow">
+                        <h3>Profile Generation Process</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+flowchart LR
+    A[Raw Job Data<br/>90 days] --> B[Data Cleaning<br/>Remove Outliers]
+    B --> C[Feature Extraction<br/>CPU, GPU, Memory, Time]
+    C --> D[Statistical Analysis<br/>Mean, P50, P95, P99]
+    D --> E{Job Pattern<br/>Recognized?}
+
+    E -->|Yes| F[Assign to<br/>Job Family]
+    E -->|No| G[Create New<br/>Profile]
+
+    F --> H[Update Family<br/>Statistics]
+    G --> H
+
+    H --> I[Store in<br/>Profile DB]
+    I --> J[Cache Hot<br/>Profiles in Redis]
+
+    J --> K[Available for<br/>Planner Queries]
+
+    style B fill:#fc8d62
+    style D fill:#fc8d62
+    style E fill:#8da0cb
+    style H fill:#fc8d62
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-implementation">
+                        <h3>Implementation Details</h3>
+                        <div class="impl-grid">
+                            <div class="impl-item">
+                                <h4>Technology Stack</h4>
+                                <ul>
+                                    <li><strong>Language:</strong> Python 3.11+</li>
+                                    <li><strong>Data Processing:</strong> Pandas, NumPy</li>
+                                    <li><strong>ML:</strong> scikit-learn for clustering</li>
+                                    <li><strong>Caching:</strong> Redis with TTL</li>
+                                    <li><strong>Database:</strong> SQLAlchemy + PostgreSQL</li>
+                                </ul>
+                            </div>
+                            <div class="impl-item">
+                                <h4>Profile Types</h4>
+                                <ul>
+                                    <li><strong>Per-Job:</strong> Individual job history</li>
+                                    <li><strong>Per-User:</strong> User's typical usage patterns</li>
+                                    <li><strong>Per-Workload:</strong> ML, simulation, data processing</li>
+                                    <li><strong>Per-Group:</strong> Research group aggregates</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agent-module">
+                <div class="agent-module-header" style="background: linear-gradient(135deg, #8da0cb, #6b7fa8);">
+                    <span class="agent-id">Agent-3</span>
+                    <h2>Planner Agent</h2>
+                    <p class="agent-tagline">Intelligent Decision Making</p>
+                </div>
+
+                <div class="agent-module-content">
+                    <div class="agent-overview">
+                        <h3>Overview</h3>
+                        <p>The Planner Agent is the brain of ASRO, using AI and machine learning to generate ranked optimization recommendations. It combines current metrics, historical profiles, and domain knowledge to propose safe and effective resource optimizations.</p>
+                    </div>
+
+                    <div class="agent-architecture">
+                        <h3>Internal Architecture</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+graph TB
+    subgraph "Planner Agent"
+        EventProc[Event Processor]
+        ContextBuilder[Context Builder]
+        LLM[LLM Reasoning Engine<br/>GPT-4/Claude]
+        ActionGen[Action Generator]
+        Simulator[Action Simulator]
+        RiskAssess[Risk Assessor]
+        Ranker[Recommendation Ranker]
+    end
+
+    subgraph "Input Sources"
+        Anomalies[Monitor Anomalies]
+        Profiles[Profiler Data]
+        Policies[Policy Rules]
+    end
+
+    subgraph "Tools via MCP"
+        JobSim[Job Simulator]
+        SlurmAPI[Slurm Query Tools]
+        TopoQuery[Topology Tools]
+    end
+
+    subgraph "Output"
+        Kafka[Kafka:<br/>Recommendations]
+        Audit[Audit Agent]
+    end
+
+    Anomalies --> EventProc
+    EventProc --> ContextBuilder
+    Profiles --> ContextBuilder
+    Policies --> ContextBuilder
+
+    ContextBuilder -->|Prompt| LLM
+    LLM -->|Candidate Actions| ActionGen
+
+    ActionGen -->|Simulate| Simulator
+    Simulator <-->|MCP Call| JobSim
+    Simulator <-->|MCP Call| SlurmAPI
+
+    Simulator -->|Predicted Impact| RiskAssess
+    Policies --> RiskAssess
+
+    RiskAssess -->|Scored Actions| Ranker
+    Ranker -->|Publish| Kafka
+    Ranker -->|Submit| Audit
+
+    style LLM fill:#8da0cb,stroke:#6b7fa8,stroke-width:3px
+    style ActionGen fill:#8da0cb
+    style Simulator fill:#ffd92f
+    style RiskAssess fill:#fc8d62
+    style Ranker fill:#8da0cb
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-responsibilities">
+                        <h3>Key Responsibilities</h3>
+                        <div class="responsibilities-grid">
+                            <div class="responsibility">
+                                <h4>🧠 Recommendation Generation</h4>
+                                <ul>
+                                    <li>Receive anomaly events and query relevant profiles</li>
+                                    <li>Use LLM to reason about potential optimizations</li>
+                                    <li>Generate multiple candidate actions (rebind GPU, resize, change QoS)</li>
+                                    <li>Consider job-specific constraints and requirements</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>🎯 Action Simulation</h4>
+                                <ul>
+                                    <li>Invoke Job Simulator with proposed changes</li>
+                                    <li>Predict impact on queue time, utilization, throughput</li>
+                                    <li>Estimate success probability using historical data</li>
+                                    <li>Calculate expected resource savings</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>⚖️ Risk Assessment</h4>
+                                <ul>
+                                    <li>Score each action based on potential disruption</li>
+                                    <li>Consider job criticality and user priority</li>
+                                    <li>Factor in confidence level of predictions</li>
+                                    <li>Apply policy constraints (e.g., no changes during peak hours)</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>📋 Ranking and Submission</h4>
+                                <ul>
+                                    <li>Rank recommendations by expected benefit vs. risk</li>
+                                    <li>Generate natural language explanations</li>
+                                    <li>Submit to Audit Agent for approval workflow</li>
+                                    <li>Track feedback on recommendation outcomes</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-llm-integration">
+                        <h3>LLM Integration</h3>
+                        <div class="llm-flow">
+                            <div class="diagram-container">
+                                <div class="mermaid">
+sequenceDiagram
+    participant Planner as Planner Agent
+    participant LLM as LLM Engine
+    participant MCP as MCP Gateway
+    participant Tools as External Tools
+
+    Planner->>Planner: Build context from anomaly + profile
+    Planner->>LLM: Prompt: "Optimize job with underutilized GPUs"
+
+    LLM->>LLM: Reason about possible actions
+    LLM->>Planner: Propose: Reduce GPU request from 8 to 4
+
+    Planner->>MCP: Request: Simulate GPU reduction
+    MCP->>Tools: Safe invocation of job simulator
+    Tools-->>MCP: Prediction: 20% faster queue, no perf loss
+    MCP-->>Planner: Return simulation results
+
+    Planner->>LLM: Context: Simulation shows positive outcome
+    LLM->>Planner: Explanation: "Job uses avg 3.8 GPUs over 30 days..."
+
+    Planner->>Planner: Generate recommendation with explanation
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-implementation">
+                        <h3>Implementation Details</h3>
+                        <div class="impl-grid">
+                            <div class="impl-item">
+                                <h4>Technology Stack</h4>
+                                <ul>
+                                    <li><strong>Language:</strong> Python 3.11+</li>
+                                    <li><strong>LLM Framework:</strong> LangChain</li>
+                                    <li><strong>Models:</strong> GPT-4, Claude 3.5 Sonnet</li>
+                                    <li><strong>Tool Access:</strong> Model Context Protocol</li>
+                                    <li><strong>Simulation:</strong> Custom discrete-event simulator</li>
+                                </ul>
+                            </div>
+                            <div class="impl-item">
+                                <h4>Optimization Types</h4>
+                                <ul>
+                                    <li><strong>GPU Binding:</strong> Fix CUDA_VISIBLE_DEVICES</li>
+                                    <li><strong>Right-sizing:</strong> Adjust CPU/GPU/memory requests</li>
+                                    <li><strong>QoS Tuning:</strong> Modify scheduling priority</li>
+                                    <li><strong>Backfill:</strong> Promote short jobs to gaps</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agent-module">
+                <div class="agent-module-header" style="background: linear-gradient(135deg, #e78ac3, #c55a9a);">
+                    <span class="agent-id">Agent-4</span>
+                    <h2>Executor Agent</h2>
+                    <p class="agent-tagline">Safe Implementation</p>
+                </div>
+
+                <div class="agent-module-content">
+                    <div class="agent-overview">
+                        <h3>Overview</h3>
+                        <p>The Executor Agent safely applies approved optimization actions to the Slurm cluster. It implements multi-stage safety mechanisms including dry-run, canary deployment, and automatic rollback to ensure changes don't harm running workloads.</p>
+                    </div>
+
+                    <div class="agent-architecture">
+                        <h3>Internal Architecture</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+graph TB
+    subgraph "Executor Agent"
+        Receiver[Action Receiver]
+        Validator[Pre-execution Validator]
+        DryRun[Dry-run Executor]
+        Checkpoint[State Checkpoint]
+        Canary[Canary Deployer<br/>10% subset]
+        FullDeploy[Full Deployment]
+        Monitor[Post-execution Monitor]
+        Rollback[Rollback Controller]
+    end
+
+    subgraph "External Systems"
+        Slurm[Slurm Controllers<br/>scontrol/slurmrestd]
+        MCP[MCP Gateway]
+    end
+
+    subgraph "Monitoring"
+        MetricMon[Monitor Agent]
+    end
+
+    subgraph "Logging"
+        AuditDB[Audit Database]
+    end
+
+    Receiver -->|Approved Action| Validator
+    Validator -->|Valid?| DryRun
+    DryRun -->|Log Expected Changes| AuditDB
+    DryRun --> Checkpoint
+
+    Checkpoint -->|Save State| Canary
+    Canary <-->|MCP Call| MCP
+    MCP <-->|Execute| Slurm
+
+    Canary -->|Request Monitoring| MetricMon
+    MetricMon -->|Canary Metrics| Monitor
+
+    Monitor -->|Success?| FullDeploy
+    Monitor -->|Failure| Rollback
+
+    FullDeploy <-->|MCP Call| MCP
+    FullDeploy -->|Log Success| AuditDB
+
+    Rollback -->|Restore State| Slurm
+    Rollback -->|Log Rollback| AuditDB
+
+    style DryRun fill:#e78ac3
+    style Canary fill:#ffd92f
+    style Monitor fill:#fc8d62
+    style Rollback fill:#d9534f
+    style FullDeploy fill:#5cb85c
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-responsibilities">
+                        <h3>Key Responsibilities</h3>
+                        <div class="responsibilities-grid">
+                            <div class="responsibility">
+                                <h4>✅ Pre-execution Validation</h4>
+                                <ul>
+                                    <li>Verify action has required approvals</li>
+                                    <li>Check cluster state hasn't changed since recommendation</li>
+                                    <li>Validate Slurm API accessibility</li>
+                                    <li>Confirm target jobs/nodes still exist</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>🧪 Dry-run Execution</h4>
+                                <ul>
+                                    <li>Simulate action without making actual changes</li>
+                                    <li>Log all commands that would be executed</li>
+                                    <li>Verify no syntax or permission errors</li>
+                                    <li>Provide detailed execution plan</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>🔄 Canary Deployment</h4>
+                                <ul>
+                                    <li>Apply change to 10% subset of affected jobs</li>
+                                    <li>Monitor canary metrics for 15 minutes</li>
+                                    <li>Compare against baseline performance</li>
+                                    <li>Proceed or abort based on results</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>↩️ Automatic Rollback</h4>
+                                <ul>
+                                    <li>Detect performance degradation post-execution</li>
+                                    <li>Restore previous state from checkpoint</li>
+                                    <li>Requeue affected jobs if necessary</li>
+                                    <li>Notify stakeholders of rollback</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-execution-flow">
+                        <h3>Execution Flow</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+flowchart LR
+    A[Receive Approved<br/>Action] --> B{Dry-run<br/>Mode?}
+
+    B -->|Yes| C[Execute Dry-run]
+    C --> D[Log Expected Changes]
+    D --> E[Return Report]
+
+    B -->|No| F[Create Checkpoint]
+    F --> G{Risk Level}
+
+    G -->|High| H[Canary Deployment<br/>10% subset]
+    G -->|Low/Medium| M[Full Deployment]
+
+    H --> I[Monitor 15 min]
+    I --> J{Metrics OK?}
+
+    J -->|Yes| M
+    J -->|No| K[Automatic Rollback]
+
+    M --> N[Monitor 30 min]
+    N --> O{Metrics OK?}
+
+    O -->|Yes| P[Mark Success<br/>Keep Changes]
+    O -->|No| K
+
+    K --> Q[Restore Checkpoint]
+    Q --> R[Log Rollback<br/>Notify Stakeholders]
+
+    style C fill:#e78ac3
+    style H fill:#ffd92f
+    style M fill:#5cb85c
+    style K fill:#d9534f
+    style P fill:#5cb85c
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-implementation">
+                        <h3>Implementation Details</h3>
+                        <div class="impl-grid">
+                            <div class="impl-item">
+                                <h4>Technology Stack</h4>
+                                <ul>
+                                    <li><strong>Language:</strong> Python 3.11+</li>
+                                    <li><strong>Slurm API:</strong> pyslurm + REST client</li>
+                                    <li><strong>State Management:</strong> JSON checkpoints</li>
+                                    <li><strong>Tool Access:</strong> Model Context Protocol</li>
+                                    <li><strong>Monitoring:</strong> Real-time metric streaming</li>
+                                </ul>
+                            </div>
+                            <div class="impl-item">
+                                <h4>Safety Mechanisms</h4>
+                                <ul>
+                                    <li><strong>Checkpoints:</strong> Full state saved before changes</li>
+                                    <li><strong>Canary %:</strong> 10% by default, configurable</li>
+                                    <li><strong>Monitor Window:</strong> 15-30 min observation</li>
+                                    <li><strong>Rollback Time:</strong> < 60 seconds average</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agent-module">
+                <div class="agent-module-header" style="background: linear-gradient(135deg, #a6d854, #7fb83d);">
+                    <span class="agent-id">Agent-5</span>
+                    <h2>Audit Agent</h2>
+                    <p class="agent-tagline">Transparency and Accountability</p>
+                </div>
+
+                <div class="agent-module-content">
+                    <div class="agent-overview">
+                        <h3>Overview</h3>
+                        <p>The Audit Agent manages approval workflows, maintains immutable audit logs, and provides transparency to administrators. It enforces policy constraints and ensures all system actions are traceable and explainable.</p>
+                    </div>
+
+                    <div class="agent-architecture">
+                        <h3>Internal Architecture</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+graph TB
+    subgraph "Audit Agent"
+        Receiver[Recommendation Receiver]
+        PolicyEngine[Policy Engine<br/>Risk Thresholds]
+        ApprovalManager[Approval Manager]
+        Notifier[Notification Service]
+        LogWriter[Immutable Log Writer]
+        Reporter[Report Generator]
+    end
+
+    subgraph "Storage"
+        AuditDB[(Audit Database<br/>PostgreSQL<br/>Append-Only)]
+        Checksums[Cryptographic<br/>Checksums]
+    end
+
+    subgraph "User Interfaces"
+        Dashboard[Web Dashboard]
+        Email[Email Service]
+        Slack[Slack/Teams]
+    end
+
+    subgraph "Input"
+        Planner[Planner<br/>Recommendations]
+        Executor[Executor<br/>Action Results]
+        AllAgents[All Agents<br/>Events]
+    end
+
+    Planner --> Receiver
+    Receiver --> PolicyEngine
+
+    PolicyEngine -->|High Risk| ApprovalManager
+    PolicyEngine -->|Low Risk| LogWriter
+
+    ApprovalManager --> Dashboard
+    ApprovalManager --> Notifier
+
+    Notifier --> Email
+    Notifier --> Slack
+
+    Dashboard -->|Approval Decision| ApprovalManager
+    ApprovalManager -->|Approved| LogWriter
+
+    Executor --> LogWriter
+    AllAgents --> LogWriter
+
+    LogWriter --> AuditDB
+    LogWriter --> Checksums
+
+    AuditDB --> Reporter
+    Reporter --> Dashboard
+
+    style PolicyEngine fill:#a6d854
+    style ApprovalManager fill:#ffd92f
+    style LogWriter fill:#a6d854,stroke:#7fb83d,stroke-width:3px
+    style AuditDB fill:#e8f4f8
+    style Checksums fill:#fc8d62
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-responsibilities">
+                        <h3>Key Responsibilities</h3>
+                        <div class="responsibilities-grid">
+                            <div class="responsibility">
+                                <h4>📋 Approval Workflow</h4>
+                                <ul>
+                                    <li>Evaluate recommendations against risk thresholds</li>
+                                    <li>Route high-risk actions for human approval</li>
+                                    <li>Auto-approve low-risk routine optimizations</li>
+                                    <li>Track approval decisions and response times</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>📢 Stakeholder Notification</h4>
+                                <ul>
+                                    <li>Notify job owners when their jobs are optimized</li>
+                                    <li>Alert administrators of pending high-risk actions</li>
+                                    <li>Send summaries of daily optimization activity</li>
+                                    <li>Escalate issues requiring immediate attention</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>📝 Immutable Logging</h4>
+                                <ul>
+                                    <li>Record all events in append-only database</li>
+                                    <li>Compute cryptographic checksums for integrity</li>
+                                    <li>Capture full context: who, what, when, why</li>
+                                    <li>Store both successful and failed actions</li>
+                                </ul>
+                            </div>
+                            <div class="responsibility">
+                                <h4>📊 Reporting and Analytics</h4>
+                                <ul>
+                                    <li>Generate daily/weekly optimization reports</li>
+                                    <li>Calculate ROI metrics (time saved, resources freed)</li>
+                                    <li>Identify trends in optimization types</li>
+                                    <li>Provide audit trails for compliance</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-approval-flow">
+                        <h3>Approval Workflow</h3>
+                        <div class="diagram-container">
+                            <div class="mermaid">
+flowchart LR
+    A[Recommendation<br/>from Planner] --> B[Policy Engine]
+
+    B --> C{Risk Score}
+
+    C -->|Low: 0-3| D[Auto-approve]
+    C -->|Medium: 4-6| E[Require 1<br/>Admin Approval]
+    C -->|High: 7-10| F[Require 2<br/>Admin Approvals]
+
+    D --> G[Log Decision]
+
+    E --> H[Notify Admin<br/>via Dashboard]
+    H --> I{Approved?}
+    I -->|Yes| G
+    I -->|No| J[Log Rejection<br/>Notify Planner]
+
+    F --> K[Notify Senior<br/>Admins]
+    K --> L{Both Approved?}
+    L -->|Yes| G
+    L -->|No| J
+
+    G --> M[Forward to<br/>Executor]
+
+    J --> N[Archive<br/>Rejected Action]
+
+    style B fill:#a6d854
+    style C fill:#ffd92f
+    style D fill:#5cb85c
+    style E fill:#f0ad4e
+    style F fill:#fc8d62
+    style G fill:#a6d854
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-implementation">
+                        <h3>Implementation Details</h3>
+                        <div class="impl-grid">
+                            <div class="impl-item">
+                                <h4>Technology Stack</h4>
+                                <ul>
+                                    <li><strong>Language:</strong> Python 3.11+</li>
+                                    <li><strong>Database:</strong> PostgreSQL with append-only tables</li>
+                                    <li><strong>Integrity:</strong> SHA-256 checksums</li>
+                                    <li><strong>Notifications:</strong> SendGrid, Slack SDK</li>
+                                    <li><strong>Dashboard:</strong> WebSocket for real-time updates</li>
+                                </ul>
+                            </div>
+                            <div class="impl-item">
+                                <h4>Audit Log Schema</h4>
+                                <ul>
+                                    <li><strong>Event ID:</strong> Unique identifier</li>
+                                    <li><strong>Timestamp:</strong> Nanosecond precision</li>
+                                    <li><strong>Actor:</strong> Agent or human user</li>
+                                    <li><strong>Action:</strong> What was done or proposed</li>
+                                    <li><strong>Context:</strong> Full state and reasoning</li>
+                                    <li><strong>Outcome:</strong> Success, failure, or rollback</li>
+                                    <li><strong>Checksum:</strong> Integrity verification</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="agent-comparison">
+            <h2>Agent Comparison Matrix</h2>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Agent</th>
+                            <th>Primary Function</th>
+                            <th>Key Technology</th>
+                            <th>Scalability</th>
+                            <th>Criticality</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Monitor</strong></td>
+                            <td>Real-time metric collection and anomaly detection</td>
+                            <td>Prometheus, nvidia-smi, Kafka</td>
+                            <td>10,000+ nodes</td>
+                            <td>🔴 High - System eyes</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Profiler</strong></td>
+                            <td>Historical analysis and pattern recognition</td>
+                            <td>Pandas, scikit-learn, PostgreSQL</td>
+                            <td>Millions of jobs</td>
+                            <td>🟡 Medium - Informs decisions</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Planner</strong></td>
+                            <td>AI-powered recommendation generation</td>
+                            <td>LangChain, GPT-4, MCP</td>
+                            <td>100 concurrent recommendations</td>
+                            <td>🔴 High - Decision maker</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Executor</strong></td>
+                            <td>Safe action implementation with rollback</td>
+                            <td>Slurm API, MCP, Checkpoints</td>
+                            <td>1000 jobs/hour</td>
+                            <td>🔴 Critical - Touches production</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Audit</strong></td>
+                            <td>Approval workflow and immutable logging</td>
+                            <td>PostgreSQL, WebSocket, Email</td>
+                            <td>10,000 events/min</td>
+                            <td>🔴 High - Compliance</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="agent-communication">
+            <h2>Inter-Agent Communication</h2>
+            <div class="diagram-container">
+                <div class="mermaid">
+graph LR
+    M[Monitor<br/>Agent] -->|Anomaly Events| K[Kafka]
+    P[Profiler<br/>Agent] -->|Profile Updates| K
+
+    K -->|Subscribe| PL[Planner<br/>Agent]
+    K -->|Subscribe| M
+    K -->|Subscribe| A[Audit<br/>Agent]
+
+    PL <-->|gRPC Query:<br/>Get Profile| P
+    PL -->|Recommendation| A
+
+    A -->|Approved Action| E[Executor<br/>Agent]
+    E -->|Request Metrics| M
+    E -->|Log Result| A
+
+    M -.->|Real-time Stream| Dashboard[Web<br/>Dashboard]
+    A -.->|Approval UI| Dashboard
+
+    style M fill:#66c2a5
+    style P fill:#fc8d62
+    style PL fill:#8da0cb
+    style E fill:#e78ac3
+    style A fill:#a6d854
+    style K fill:#ffd92f
+                </div>
+            </div>
+            <div class="comm-legend">
+                <p><strong>Solid arrows:</strong> Asynchronous event-driven (Kafka)</p>
+                <p><strong>Double arrows:</strong> Synchronous RPC (gRPC)</p>
+                <p><strong>Dashed arrows:</strong> WebSocket streaming (Dashboard)</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ASRO Design Team | CS 5744: Software Design and Quality</p>
+        </div>
+    </footer>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#4a90e2',
+                primaryTextColor: '#333',
+                primaryBorderColor: '#2e5c8a',
+                lineColor: '#666',
+                secondaryColor: '#e8f4f8',
+                tertiaryColor: '#f5f5f5'
+            },
+            flowchart: {
+                nodeSpacing: 50,
+                rankSpacing: 50,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

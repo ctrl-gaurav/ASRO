@@ -91,17 +91,30 @@ ASRO implements a sophisticated multi-agent architecture with clear separation o
 
 Our comprehensive design documentation covers every aspect of the system:
 
+### 📖 [Use Cases](https://ctrl-gaurav.github.io/ASRO/usecases.html)
+- 6 detailed real-world scenarios demonstrating ASRO's capabilities
+- Interactive sequence diagrams showing agent collaboration
+- Quantified impact metrics and benefits
+- Requirements mapping for each use case
+
 ### 📋 [Requirements Specification](https://ctrl-gaurav.github.io/ASRO/requirements.html)
 - 20 functional requirements covering monitoring, planning, execution, and communication
 - 15 non-functional requirements for performance, security, and reliability
 - Clear customer and user personas
 
-### 🏛️ [System Architecture](https://ctrl-gaurav.github.io/ASRO/architecture.html)
+### 🏛️ [System Architecture (HLD)](https://ctrl-gaurav.github.io/ASRO/architecture.html)
 - Interactive component diagrams
-- Detailed agent descriptions
+- High-level system design
 - Communication protocols and data flows
 - Deployment architecture
 - Technology stack
+
+### 🤖 [Agent Modules](https://ctrl-gaurav.github.io/ASRO/agents.html)
+- Detailed architecture for all 5 specialized agents
+- Beautiful interactive diagrams for each agent
+- Internal component breakdowns
+- Technology stack and implementation details
+- Inter-agent communication patterns
 
 ### 💭 [Design Rationale](https://ctrl-gaurav.github.io/ASRO/rationale.html)
 - 10 key architectural decisions explained
@@ -151,12 +164,13 @@ ASRO addresses these challenges through intelligent automation while maintaining
 
 ## 📊 Key Metrics
 
+- **6** detailed use cases with sequence diagrams
 - **35** total requirements (20 functional + 15 non-functional)
 - **13** architectural components
 - **10** design decisions with full justification
-- **5** specialized AI agents
+- **5** specialized AI agents with detailed architectures
 - **100%** requirements-to-components traceability
-- **4** interactive system diagrams
+- **15+** interactive system diagrams using Mermaid.js
 
 ## 🌐 Live Demo
 
@@ -179,6 +193,6 @@ This project is submitted as academic coursework for CS 5744: Software Design an
 
 **CS 5744: Software Design and Quality** | **Fall 2025** | **Virginia Tech**
 
-[Documentation](https://ctrl-gaurav.github.io/ASRO/) • [Requirements](https://ctrl-gaurav.github.io/ASRO/requirements.html) • [Architecture](https://ctrl-gaurav.github.io/ASRO/architecture.html) • [Rationale](https://ctrl-gaurav.github.io/ASRO/rationale.html)
+[Documentation](https://ctrl-gaurav.github.io/ASRO/) • [Use Cases](https://ctrl-gaurav.github.io/ASRO/usecases.html) • [Requirements](https://ctrl-gaurav.github.io/ASRO/requirements.html) • [Architecture](https://ctrl-gaurav.github.io/ASRO/architecture.html) • [Agents](https://ctrl-gaurav.github.io/ASRO/agents.html) • [Rationale](https://ctrl-gaurav.github.io/ASRO/rationale.html)
 
 </div>
